@@ -1,0 +1,13 @@
+name = "ACDCStateEstimation"
+uuid = "12a95e38-0f0d-4102-861d-7ea40a75b0de"
+authors = ["MartaVanin <marta.vanin@esat.kuleuven.be> and contributors"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
