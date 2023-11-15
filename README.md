@@ -11,12 +11,13 @@
 ## TODOs
 
 - import export PMMCDC parsers so that they are not needed in the examples. add preferential functions for 5-bus ntw and 67-bus ntw parsing
-- remove `constraint_voltage_dc` altogether from problem description?
+- find a pretty way to choose to "drop" neutral/ground dc voltage, current and power measurements
+- add missing measurements and measurement conversions (see `synthetic_measurements.jl`)
 
 ## Notes
 
 Based on the PowerModelsMCDC data format:
-1. all DC buses have three terminals, even unused ones
+1. all dc buses have three terminals, even when some of them are not actually connected to anything
 2. for dc branches, you need to check first `line_confi`. If this is 2, all terminals are connected. Only if it is 1, go look at `connect_at`
 3. above is the same for converters, too
 

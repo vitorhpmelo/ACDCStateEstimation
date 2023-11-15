@@ -54,15 +54,14 @@ function build_acdcse(pm::_PM.AbstractPowerModel)
     for i in _PM.ids(pm, :branch)
         _PM.constraint_ohms_yt_from(pm, i)
         _PM.constraint_ohms_yt_to(pm, i)
-        _PM.constraint_voltage_angle_difference(pm, i) #angle difference across transformer and reactor - useful for LPAC if available?
+        _PM.constraint_voltage_angle_difference(pm, i) # angle difference across transformer and reactor - useful for LPAC if available?
         _PM.constraint_thermal_limit_from(pm, i)
         _PM.constraint_thermal_limit_to(pm, i)
     end
 
     # PowerModelsMCDC constraints
-    # _PMMCDC.constraint_voltage_dc(pm) <-- TODO REMOVE THIS ONE?
     for i in _PM.ids(pm, :busdc)
-        _PMMCDC.constraint_kcl_shunt_dcgrid(pm, i) # this will have to be replaced if we want to allow loads on the dc side
+        _PMMCDC.constraint_kcl_shunt_dcgrid(pm, i) # this will have to be replaced if we want to allow dc loads
     end
     for i in _PM.ids(pm, :branchdc)
         _PMMCDC.constraint_ohms_dc_branch(pm, i)

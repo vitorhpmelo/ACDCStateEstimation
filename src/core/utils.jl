@@ -3,29 +3,48 @@
 Retrieves the id of the component in measurement i. This is a tuple if the component is a branch. Otherwise, it is a scalar.
 """
 function get_cmp_id(pm::_PM.AbstractPowerModel, nw::Int, i::Int)
-    if  _PM.ref(pm, nw, :meas, i, "cmp") == :branch
-        branch_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
-        cmp_id = (branch_id, _PM.ref(pm,nw,:branch, branch_id)["f_bus"], _PM.ref(pm,nw,:branch,branch_id)["t_bus"])
+    # TODO add clause for converters, if we end up considering them
+    # if  _PM.ref(pm, nw, :meas, i, "cmp") == :branch
+    #     branch_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+    #     display("branch id is $branch_id")
+    #     display("meas is $i")
+    #     cmp_id = (branch_id, _PM.ref(pm,nw,:branch, branch_id)["f_bus"], _PM.ref(pm,nw,:branch,branch_id)["t_bus"])
+    if _PM.ref(pm, nw, :meas, i, "cmp") == :branchdc
+         branch_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+         cmp_id = (branch_id, _PM.ref(pm,nw,:branchdc, branch_id)["fbusdc"], _PM.ref(pm,nw,:branchdc,branch_id)["tbusdc"])
     else
-        cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+         cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
     end
     return cmp_id
 end
 """
-    function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id::Int)
+    function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id)
 Returns the list of terminals, connections or t_ and f_connections, depending on the type of the component.
 """
-function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id::Int)
+function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id)
     if cmp_type == :busdc
-       active_conn = [1, 2, 3]
-   elseif cmp_type ∈ [:gen, :load]
-       active_conn = _PM.ref(pm, nw, cmp_type, cmp_id)["connections"]
-   elseif cmp_type == :branch
-       active_conn = intersect(_PM.ref(pm, nw, :branch, cmp_id)["f_connections"], _PM.ref(pm, nw, :branch, cmp_id)["t_connections"])
+       return [1, 2, 3]
+    elseif cmp_type == :branchdc
+       return _PM.ref(pm, nw, cmp_type, cmp_id[1])["line_confi"] == 2 ? [1,2,3] : [1]
+#    elseif cmp_type == :branchdc
+#         active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["line_confi"] == 2 ? [1,2,3] : get_monopolar_conn(_PM.ref(pm, nw, cmp_type, cmp_id)["connect_at"])
+#     elseif cmp_type == :convdc
+#         active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["conv_confi"] == 2 ? [1,2,3] : get_monopolar_conn(_PM.ref(pm, nw, cmp_type, cmp_id)["connect_at"])
    else
-       error("Measurements for component of type $cmp_type are not supported")
+       return [1]
    end
-   return active_conn
+end
+"""
+    get_monopolar_conn(connect_at::Int)
+"""
+function get_monopolar_conn(connect_at::Int)::Vector{Int}
+    if connect_at == 0
+        return [1,2]
+    elseif connect_at == 1
+        return [1,3]
+    elseif connect_at == 2
+        return [2,3]
+    end
 end
 """
     assign_unique_individual_criterion!(data::Dict)

@@ -40,10 +40,16 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
         cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
         cmp_type = _PM.ref(pm, nw, :meas, i, "cmp")
         connections = get_active_connections(pm, nw, cmp_type, cmp_id)
-        if no_conversion_needed(pm, msr_var)
+        if no_conversion_needed(pm, msr_var, cmp_type)
             #no additional variable is created, it is already by default in the formulation
         else
-            cmp_type == :branch ? id = (cmp_id, _PM.ref(pm,nw,:branch, cmp_id)["f_bus"], _PM.ref(pm,nw,:branch, cmp_id)["t_bus"]) : id = cmp_id
+            id = if cmp_type == :branch 
+                (cmp_id, _PM.ref(pm,nw,:branch, cmp_id)["f_bus"], _PM.ref(pm,nw,:branch, cmp_id)["t_bus"])
+            elseif cmp_type == :branchdc
+                (cmp_id, _PM.ref(pm,nw,:branchdc, cmp_id)["fbusdc"], _PM.ref(pm,nw,:branchdc, cmp_id)["tbusdc"])
+            else 
+                cmp_id
+            end
             if haskey(_PM.var(pm, nw), msr_var)
                 push!(_PM.var(pm, nw)[msr_var], id => JuMP.@variable(pm.model,
                     [c in connections], base_name="$(nw)_$(String(msr_var))_$id"))
@@ -51,7 +57,7 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
                 _PM.var(pm, nw)[msr_var] = Dict(id => JuMP.@variable(pm.model,
                     [c in connections], base_name="$(nw)_$(String(msr_var))_$id"))
             end
-            msr_type = assign_conversion_type_to_msr(pm, i, msr_var; nw=nw)
+            msr_type = assign_conversion_type_to_msr(pm, i, msr_var, cmp_type; nw=nw)
             create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type; nw=nw)
         end
     end
@@ -60,6 +66,7 @@ end
     variable_load in terms of power, for ACR and ACP
 """
 function variable_load(pm::_PM.AbstractPowerModel; kwargs...)
+    # NB: currently, only (single-phase eq.) loads on the ac side are supported
     variable_load_active(pm; kwargs...)
     variable_load_reactive(pm; kwargs...)
 end
@@ -67,11 +74,9 @@ end
 function variable_load_active(pm::_PM.AbstractPowerModel;
                                  nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
 
-    connections = Dict(i => load["connections"] for (i,load) in _PM.ref(pm, nw, :load))
-
     pd = _PM.var(pm, nw)[:pd] = Dict(i => JuMP.@variable(pm.model,
-            [c in connections[i]], base_name="$(nw)_pd_$(i)"
-            #,start = _PMD.comp_start_value(_PMD.ref(pm, nw, :load, i), "pd_start", c, 0.0) #findall(idx -> idx == c, connections[i])[1]
+            base_name="$(nw)_pd_$(i)"
+            #,start = _PM.comp_start_value(_PM.ref(pm, nw, :load, i), "pd_start", c, 0.0) #findall(idx -> idx == c, connections[i])[1]
         ) for i in _PM.ids(pm, nw, :load)
     )
 
@@ -89,17 +94,15 @@ function variable_load_active(pm::_PM.AbstractPowerModel;
             end
         end
     end
-    report && _PM.sol_component_value(pm, :pmd, nw, :load, :pd, _PM.ids(pm, nw, :load), pd)
+    report && _PM.sol_component_value(pm, nw, :load, :pd, _PM.ids(pm, nw, :load), pd)
 end
 
 function variable_load_reactive(pm::_PM.AbstractPowerModel;
                                    nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
 
-    connections = Dict(i => load["connections"] for (i,load) in _PMD.ref(pm, nw, :load))
-
     qd = _PM.var(pm, nw)[:qd] = Dict(i => JuMP.@variable(pm.model,
-            [c in connections[i]], base_name="$(nw)_qd_$(i)"
-            #,start = _PMD.comp_start_value(_PMD.ref(pm, nw, :load, i), "qd_start", c, 0.0) #findall(idx -> idx == c, connections[i])[1]
+            base_name="$(nw)_qd_$(i)"
+            #,start = _PM.comp_start_value(_PM.ref(pm, nw, :load, i), "qd_start", c, 0.0) #findall(idx -> idx == c, connections[i])[1]
         ) for i in _PM.ids(pm, nw, :load)
     )
 
@@ -117,12 +120,13 @@ function variable_load_reactive(pm::_PM.AbstractPowerModel;
             end
         end
     end
-    report && _PM.sol_component_value(pm, :pmd, nw, :load, :qd, _PM.ids(pm, nw, :load), qd)
+    report && _PM.sol_component_value(pm, nw, :load, :qd, _PM.ids(pm, nw, :load), qd)
 end
 """
     variable_load_current, IVR current equivalent of variable_load
 """
 function variable_load_current(pm::_PM.AbstractIVRModel; kwargs...)
+    # NB: currently, only (single-phase eq.) loads on the ac side are supported
     variable_load_current_real(pm; kwargs...)
     variable_load_current_imag(pm; kwargs...)
 end
@@ -130,26 +134,41 @@ end
 function variable_load_current_real(pm::_PM.AbstractIVRModel;
                                  nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
 
-    connections = Dict(i => load["connections"] for (i,load) in _PM.ref(pm, nw, :load))
-
     crd = _PM.var(pm, nw)[:crd] = Dict(i => JuMP.@variable(pm.model,
-            [c in connections[i]], base_name="$(nw)_crd_$(i)"
-            #,start = _PMD.comp_start_value(_PMD.ref(pm, nw, :load, i), "crd_start", c, 0.0)
+            base_name="$(nw)_crd_$(i)"
+            #,start = _PM.comp_start_value(_PM.ref(pm, nw, :load, i), "crd_start", c, 0.0)
         ) for i in _PM.ids(pm, nw, :load)
     )
 
-    report && _PM.sol_component_value(pm, :pmd, nw, :load, :crd, _PM.ids(pm, nw, :load), crd)
+    report && _PM.sol_component_value(pm, nw, :load, :crd, _PM.ids(pm, nw, :load), crd)
 end
 
 function variable_load_current_imag(pm::_PM.AbstractIVRModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true, meas_start::Bool=false)
 
-    connections = Dict(i => load["connections"] for (i,load) in _PM.ref(pm, nw, :load))
-
     cid = _PM.var(pm, nw)[:cid] = Dict(i => JuMP.@variable(pm.model,
-            [c in connections[i]], base_name="$(nw)_cid_$(i)"
-            #,start = _PMD.comp_start_value(_PMD.ref(pm, nw, :load, i), "cid_start",c, 0.0)
+           base_name="$(nw)_cid_$(i)"
+            #,start = _PM.comp_start_value(_PM.ref(pm, nw, :load, i), "cid_start",c, 0.0)
         ) for i in _PM.ids(pm, nw, :load)
     )
 
-    report && _PM.sol_component_value(pm, :pmd, nw, :load, :cid, _PM.ids(pm, nw, :load), cid)
+    report && _PM.sol_component_value(pm, nw, :load, :cid, _PM.ids(pm, nw, :load), cid)
+end
+
+function variable_mc_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
+
+    p = _PM.var(pm, nw)[:p_dcgrid] = Dict((l, i, j) => JuMP.@variable(pm.model,
+        [c in 1:_PM.ref(pm, nw, :branchdc, l)["conductors"]], base_name = "$(nw)_pdcgrid_$((l,i,j))",
+        start = comp_start_value(_PM.ref(pm, nw, :branchdc, l), "p_start", c, 0.0),
+    ) for (l, i, j) in _PM.ref(pm, nw, :arcs_dcgrid)
+    )
+
+    if bounded
+        for arc in _PM.ref(pm, nw, :arcs_dcgrid)
+            l, i, j = arc
+            JuMP.set_lower_bound.(p[arc], -_PM.ref(pm, nw, :branchdc, l)["rateA"])
+            JuMP.set_upper_bound.(p[arc], _PM.ref(pm, nw, :branchdc, l)["rateA"])
+        end
+    end
+
+    report && _PM.sol_component_value_edge(pm, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p)
 end

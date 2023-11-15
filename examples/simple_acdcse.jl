@@ -12,20 +12,22 @@ _PMMCDC_dir = dirname(dirname(pathof(_PMMCDC)))
 
 data = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case5_2grids_MC.m"))
 result = _PMMCDC.solve_mcdcopf(data, _PM.ACPPowerModel, nlp_optimizer)
-get_dc_power!(result, data)
+_ACDCSE.get_dc_power!(result, data)
 
 σ_dict = Dict{String, Float64}(
-    "vm"   => 0.01,
-    "p_ac" => 0.01,
-    "q_ac" => 0.01,
-    "vdcm" => 0.01
+    "vm"       => 0.01,
+    "va"       => 0.01,
+    "vr"       => 0.01,
+    "vi"       => 0.01,
+    "p_ac"     => 0.01,
+    "q_ac"     => 0.01,
+    "vdcm"     => 0.01,
+    "p_dc"     => 0.01,
+    "i_dcgrid" => 0.01
 )
 
-_ACDCSE.powerflow2measurements!(data, result, σ_dict, sample_error=false)
+_ACDCSE.powerflow2measurements!(data, result, σ_dict, sample_error=true, measurements = ["vm", "va", "p_fr", "q_fr", "vdcm", "p_dc_fr"])
 
-data["se_settings"] = Dict(
-    "rescaler" => 1,
-    "criterion" => "rwlav"
-)
+_ACDCSE.prepare_data_for_se_default!(data)
 
 se_res = _ACDCSE.solve_acdcse(data, _PM.ACPPowerModel, nlp_optimizer)
