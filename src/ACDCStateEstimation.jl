@@ -15,6 +15,7 @@ module ACDCStateEstimation
     include("io/parse_networks.jl")
     include("io/postprocess_opf_solution.jl")
     include("io/synthetic_measurements.jl")
+    include("io/topological_utils.jl")
 
     include("prob/acdcse.jl")
 

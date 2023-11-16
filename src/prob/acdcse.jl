@@ -36,7 +36,7 @@ function build_acdcse(pm::_PM.AbstractPowerModel)
     _PM.variable_branch_power(pm, report = false)
 
     # PowerModelsMCDC variables 
-    _PMMCDC.variable_mc_active_dcbranch_flow(pm, bounded=true)
+    # _PMMCDC.variable_mc_active_dcbranch_flow(pm, bounded=true)
     _PMMCDC.variable_mcdcgrid_voltage_magnitude(pm, bounded=true)
     _PMMCDC.variable_mcdc_converter(pm, bounded=true)
     _PMMCDC.variable_mc_dcbranch_current(pm, bounded=true)

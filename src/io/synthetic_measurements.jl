@@ -13,7 +13,12 @@ function powerflow2measurements!(data::Dict, pf_res::Dict, σ_dict::Dict; sample
     if "va" ∈ measurements add_va!(data, pf_res, σ_dict, sample_error) end     # ac bus voltage angle
     if "vr" ∈ measurements add_vr!(data, pf_res, σ_dict, sample_error) end     # ac bus voltage rectangular real
     if "vi" ∈ measurements add_vi!(data, pf_res, σ_dict, sample_error) end     # ac bus voltage rectangular imag
-    #TODO ADD injections
+    if "pg" ∈ measurements add_pg!(data, pf_res, σ_dict, sample_error) end     # active power injection from generator
+    if "qg" ∈ measurements add_qg!(data, pf_res, σ_dict, sample_error) end     # reactive power injection from generator
+    if "pd" ∈ measurements add_pd!(data, pf_res, σ_dict, sample_error) end     # active power injection from load
+    if "qd" ∈ measurements add_qd!(data, pf_res, σ_dict, sample_error) end     # reactive power injection from load
+    #TODO ADD INJECTION CURRENTS??? (CGM CGA CDM CDA)
+    # NOTE: I can't imagine there are additional injection measurements! (unless we add storage or similar components?)
 
     # FLOW measurements
     if "p_fr" ∈ measurements add_p_fr!(data, pf_res, σ_dict, sample_error) end  # ac active power from
@@ -134,6 +139,66 @@ function add_q_to!(data, pf_res, σ_dict, sample_error)
     end
 end
 
+function add_pg!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (g, gen) in pf_res["solution"]["gen"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(gen["pg"], σ_dict["pg"]), ) : gen["pg"]
+        dst = [_DST.Normal(μ, σ_dict["pg"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :gen,
+            "cmp_id"  => data["gen"][g]["index"],
+            "var"     => :pg,
+            "dst"     => dst
+        )
+        m_idx+=1
+    end
+end
+
+function add_qg!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (g, gen) in pf_res["solution"]["gen"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(gen["qg"], σ_dict["qg"]), ) : gen["qg"]
+        dst = [_DST.Normal(μ, σ_dict["qg"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :gen,
+            "cmp_id"  => data["gen"][g]["index"],
+            "var"     => :qg,
+            "dst"     => dst
+        )
+        m_idx+=1
+    end
+end
+
+function add_pd!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (l, load) in data["load"] # contrary to generators, loads are not (o)pf variables, so can't find them in the solution dict
+        μ = sample_error ? _RAN.rand(_DST.Normal(load["pd"], σ_dict["pd"]), ) : load["pd"]
+        dst = [_DST.Normal(μ, σ_dict["pd"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :load,
+            "cmp_id"  => data["load"][l]["index"],
+            "var"     => :pd,
+            "dst"     => dst
+        )
+        m_idx+=1
+    end
+end
+
+function add_qd!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (l, load) in data["load"] # contrary to generators, loads are not (o)pf variables, so can't find them in the solution dict
+        μ = sample_error ? _RAN.rand(_DST.Normal(load["qd"], σ_dict["qd"]), ) : load["qd"]
+        dst = [_DST.Normal(μ, σ_dict["qd"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :load,
+            "cmp_id"  => data["load"][l]["index"],
+            "var"     => :qd,
+            "dst"     => dst
+        )
+        m_idx+=1
+    end
+end
+
 # DC NODAL MEASUREMENTS
 
 function add_vdcm!(data, pf_res, σ_dict, sample_error)
@@ -156,12 +221,12 @@ end
 function add_i_dcgrid_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
-        c = length(branch["i_dcgrid"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_dcgrid_fr"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_dcgrid_fr"][1:c]
+        c = length(branch["i_from"])
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_from"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_from"][1:c]
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
-            "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]),
+            "cmp_id"    => data["branchdc"][b]["index"], #data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]),
             "var"       => :i_dcgrid,
             "dst"       => dst
         )
@@ -172,8 +237,8 @@ end
 function add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
-        c = length(branch["i_dcgrid"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_dcgrid_to"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_dcgrid_to"][1:c]
+        c = length(branch["i_to"])
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_to"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_to"][1:c]
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,

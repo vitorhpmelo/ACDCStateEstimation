@@ -153,22 +153,3 @@ function variable_load_current_imag(pm::_PM.AbstractIVRModel; nw::Int=_PM.nw_id_
 
     report && _PM.sol_component_value(pm, nw, :load, :cid, _PM.ids(pm, nw, :load), cid)
 end
-
-function variable_mc_active_dcbranch_flow(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default, bounded::Bool=true, report::Bool=true)
-
-    p = _PM.var(pm, nw)[:p_dcgrid] = Dict((l, i, j) => JuMP.@variable(pm.model,
-        [c in 1:_PM.ref(pm, nw, :branchdc, l)["conductors"]], base_name = "$(nw)_pdcgrid_$((l,i,j))",
-        start = comp_start_value(_PM.ref(pm, nw, :branchdc, l), "p_start", c, 0.0),
-    ) for (l, i, j) in _PM.ref(pm, nw, :arcs_dcgrid)
-    )
-
-    if bounded
-        for arc in _PM.ref(pm, nw, :arcs_dcgrid)
-            l, i, j = arc
-            JuMP.set_lower_bound.(p[arc], -_PM.ref(pm, nw, :branchdc, l)["rateA"])
-            JuMP.set_upper_bound.(p[arc], _PM.ref(pm, nw, :branchdc, l)["rateA"])
-        end
-    end
-
-    report && _PM.sol_component_value_edge(pm, nw, :branchdc, :pf, :pt, _PM.ref(pm, nw, :arcs_dcgrid_from), _PM.ref(pm, nw, :arcs_dcgrid_to), p)
-end

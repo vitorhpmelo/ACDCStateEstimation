@@ -254,11 +254,21 @@ function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, 
 
     for mm in msr.mult2
         if occursin("v", String(mm)) && msr.cmp_type != :bus
-            push!(m2, _PM.var(pm, nw, mm, msr.bus_ind))
+            if msr.cmp_type == :branchdc && _PM.ref(pm, nw, :branchdc, msr.cmp_id)["line_confi"] == 1 # we need to align to the fact that all +-0 voltages exist but only two currents
+                if _PM.ref(pm, nw, :branchdc, msr.cmp_id)["connect_at"] == 0
+                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[1,2]])    
+                elseif _PM.ref(pm, nw, :branchdc, msr.cmp_id)["connect_at"] == 1
+                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[1,3]])
+                else
+                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[2,3]])
+                end
+            else
+                push!(m2, _PM.var(pm, nw, mm, msr.bus_ind))
+            end
         elseif msr.cmp_type == :branch
             push!(m2, _PM.var(pm, nw, mm, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branch, msr.cmp_id)["t_bus"])))
         elseif msr.cmp_type == :branchdc
-            push!(m2, _PM.var(pm, nw, mm, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branch, msr.cmp_id)["tbusdc"])))
+            push!(m2, _PM.var(pm, nw, m, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branchdc,msr.cmp_id)["tbusdc"])))
         else
             push!(m2, _PM.var(pm, nw, mm, msr.cmp_id))
         end
