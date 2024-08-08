@@ -6,6 +6,8 @@ module ACDCStateEstimation
     import PowerModelsMCDC as _PMMCDC
     import Random as _RAN
 
+    const _PMMCDC_dir = dirname(dirname(pathof(_PMMCDC)))
+
     include("core/constraint.jl")
     include("core/measurement_conversion.jl")
     include("core/objective.jl")
@@ -18,5 +20,7 @@ module ACDCStateEstimation
     include("io/topological_utils.jl")
 
     include("prob/acdcse.jl")
+
+    export solve_acdcse
 
 end
