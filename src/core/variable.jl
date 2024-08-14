@@ -43,19 +43,12 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
         if no_conversion_needed(pm, msr_var, cmp_type)
             #no additional variable is created, it is already by default in the formulation
         else
-            id = if cmp_type == :branch 
-                (cmp_id, _PM.ref(pm,nw,:branch, cmp_id)["f_bus"], _PM.ref(pm,nw,:branch, cmp_id)["t_bus"])
-            elseif cmp_type == :branchdc
-                (cmp_id, _PM.ref(pm,nw,:branchdc, cmp_id)["fbusdc"], _PM.ref(pm,nw,:branchdc, cmp_id)["tbusdc"])
-            else 
-                cmp_id
-            end
             if haskey(_PM.var(pm, nw), msr_var)
-                push!(_PM.var(pm, nw)[msr_var], id => JuMP.@variable(pm.model,
-                    [c in connections], base_name="$(nw)_$(String(msr_var))_$id"))
+                push!(_PM.var(pm, nw)[msr_var], cmp_id => JuMP.@variable(pm.model,
+                    [c in connections], base_name="$(nw)_$(String(msr_var))_$(cmp_id)"))
             else
-                _PM.var(pm, nw)[msr_var] = Dict(id => JuMP.@variable(pm.model,
-                    [c in connections], base_name="$(nw)_$(String(msr_var))_$id"))
+                _PM.var(pm, nw)[msr_var] = Dict(cmp_id => JuMP.@variable(pm.model,
+                    [c in connections], base_name="$(nw)_$(String(msr_var))_$(cmp_id)"))
             end
             msr_type = assign_conversion_type_to_msr(pm, i, msr_var, cmp_type; nw=nw)
             create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type; nw=nw)

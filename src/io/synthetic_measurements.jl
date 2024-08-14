@@ -17,31 +17,37 @@ function powerflow2measurements!(data::Dict, pf_res::Dict, σ_dict::Dict; sample
     if "qg" ∈ measurements add_qg!(data, pf_res, σ_dict, sample_error) end     # reactive power injection from generator
     if "pd" ∈ measurements add_pd!(data, pf_res, σ_dict, sample_error) end     # active power injection from load
     if "qd" ∈ measurements add_qd!(data, pf_res, σ_dict, sample_error) end     # reactive power injection from load
-    #TODO ADD INJECTION CURRENTS??? (CGM CGA CDM CDA)
+    #TODO ADD CURRENT INJECTIONS??? (CGM CGA CDM CDA)
     # NOTE: I can't imagine there are additional injection measurements! (unless we add storage or similar components?)
 
     # FLOW measurements
-    if "p_fr" ∈ measurements add_p_fr!(data, pf_res, σ_dict, sample_error) end  # ac active power from
-    if "q_fr" ∈ measurements add_q_fr!(data, pf_res, σ_dict, sample_error) end  # ac reactive power from
-    if "p_to" ∈ measurements add_p_to!(data, pf_res, σ_dict, sample_error) end  # ac active power to
-    if "q_to" ∈ measurements add_q_to!(data, pf_res, σ_dict, sample_error) end  # ac reactive power to  
+    if "p_fr"  ∈ measurements  add_p_fr!(data, pf_res, σ_dict, sample_error) end # ac active power from
+    if "q_fr"  ∈ measurements  add_q_fr!(data, pf_res, σ_dict, sample_error) end # ac reactive power from
+    if "p_to"  ∈ measurements  add_p_to!(data, pf_res, σ_dict, sample_error) end # ac active power to
+    if "q_to"  ∈ measurements  add_q_to!(data, pf_res, σ_dict, sample_error) end # ac reactive power to  
     if "cm_fr" ∈ measurements add_cm_fr!(data, pf_res, σ_dict, sample_error) end # ac current magnitude from
     if "cm_to" ∈ measurements add_cm_to!(data, pf_res, σ_dict, sample_error) end # ac current magnitude to
-    if "ca_fr" ∈ measurements add_ca_fr!(data, pf_res, σ_dict, sample_error) end # ac current angle from
-    if "ca_to" ∈ measurements add_ca_to!(data, pf_res, σ_dict, sample_error) end # ac current angle to
-    if "cr_fr" ∈ measurements add_cr_fr!(data, pf_res, σ_dict, sample_error) end # ac current rectangular real from
-    if "cr_to" ∈ measurements add_cr_to!(data, pf_res, σ_dict, sample_error) end # ac current rectangular real to
-    if "ci_fr" ∈ measurements add_ci_fr!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag from
-    if "ci_to" ∈ measurements add_ci_to!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag to
+
+    # ↓ the below to add? (not sure if all need to be added)
+    # if "ca_fr" ∈ measurements add_ca_fr!(data, pf_res, σ_dict, sample_error) end # ac current angle from
+    # if "ca_to" ∈ measurements add_ca_to!(data, pf_res, σ_dict, sample_error) end # ac current angle to
+    # if "cr_fr" ∈ measurements add_cr_fr!(data, pf_res, σ_dict, sample_error) end # ac current rectangular real from
+    # if "cr_to" ∈ measurements add_cr_to!(data, pf_res, σ_dict, sample_error) end # ac current rectangular real to
+    # if "ci_fr" ∈ measurements add_ci_fr!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag from
+    # if "ci_to" ∈ measurements add_ci_to!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag to
 
     ### DC MEASUREMENTS ###
 
     # NODAL measurements (voltages and injections)
     if "vdcm" ∈ measurements add_vdcm!(data, pf_res, σ_dict, sample_error) end # dc bus voltage
-    #TODO ADD injections
+
+
+    #TODO ADD injections (FROM CONVERTERS)
 
     # FLOW measurements
-    if "i_dcgrid_fr" ∈ measurements add_i_dcgrid_fr!(data, pf_res, σ_dict, sample_error) end # dc branch currents from
+    if "i_dcgrid_fr" ∈ measurements
+        display("adding i_dcgrid_fr")
+        add_i_dcgrid_fr!(data, pf_res, σ_dict, sample_error) end # dc branch currents from
     if "i_dcgrid_to" ∈ measurements add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error) end # dc branch currents to
 
     if "p_dc_fr" ∈ measurements add_p_dc_fr!(data, pf_res, σ_dict, sample_error) end     # dc branch power from
@@ -88,7 +94,8 @@ function add_p_fr!(data, pf_res, σ_dict, sample_error)
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["f_bus"], data["branch"][br]["t_bus"]),
             "var"     => :p,
-            "dst"     => dst
+            "dst"     => dst,
+            "direction" => :from
         )
         m_idx+=1
     end
@@ -103,7 +110,8 @@ function add_q_fr!(data, pf_res, σ_dict, sample_error)
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["f_bus"], data["branch"][br]["t_bus"]),
             "var"     => :q,
-            "dst"     => dst
+            "dst"     => dst,
+            "direction" => :from
         )
         m_idx+=1
     end
@@ -118,7 +126,8 @@ function add_p_to!(data, pf_res, σ_dict, sample_error)
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["t_bus"], data["branch"][br]["f_bus"]),
             "var"     => :p,
-            "dst"     => dst
+            "dst"     => dst,
+            "direction" => :to
         )
         m_idx+=1
     end
@@ -133,7 +142,8 @@ function add_q_to!(data, pf_res, σ_dict, sample_error)
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["t_bus"], data["branch"][br]["f_bus"]),
             "var"     => :q,
-            "dst"     => dst
+            "dst"     => dst,
+            "direction" => :to
         )
         m_idx+=1
     end
@@ -199,6 +209,38 @@ function add_qd!(data, pf_res, σ_dict, sample_error)
     end
 end
 
+function add_cm_fr!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (br, branch) in pf_res["solution"]["branch"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], σ_dict["cm"]), ) : branch["cmf"]
+        dst = [_DST.Normal(μ, σ_dict["cm"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :branch,
+            "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["f_bus"], data["branch"][br]["t_bus"]),
+            "var"     => :cm,
+            "dst"     => dst,
+            "direction" => :from
+        )
+        m_idx+=1
+    end
+end
+
+function add_cm_to!(data, pf_res, σ_dict, sample_error)
+    m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
+    for (br, branch) in pf_res["solution"]["branch"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], σ_dict["cm"]), ) : branch["cmf"]
+        dst = [_DST.Normal(μ, σ_dict["cm"])]
+        data["meas"]["$m_idx"] = Dict(
+            "cmp"     => :branch,
+            "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["t_bus"], data["branch"][br]["f_bus"]),
+            "var"     => :cm,
+            "dst"     => dst,
+            "direction" => :to
+        )
+        m_idx+=1
+    end
+end
+
 # DC NODAL MEASUREMENTS
 
 function add_vdcm!(data, pf_res, σ_dict, sample_error)
@@ -226,9 +268,10 @@ function add_i_dcgrid_fr!(data, pf_res, σ_dict, sample_error)
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
-            "cmp_id"    => data["branchdc"][b]["index"], #data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]),
+            "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]), 
             "var"       => :i_dcgrid,
-            "dst"       => dst
+            "dst"       => dst,
+            "direction" => :from
         )
         m_idx+=1
     end
@@ -242,9 +285,10 @@ function add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error)
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
-            "cmp_id"    => data["branchdc"][b]["index"],#(data["branchdc"][b]["index"], data["branchdc"][b]["tbusdc"], data["branchdc"][b]["fbusdc"]),
+            "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["tbusdc"], data["branchdc"][b]["fbusdc"]),
             "var"       => :i_dcgrid,
-            "dst"       => dst
+            "dst"       => dst,
+            "direction" => :to
         )
         m_idx+=1
     end
@@ -258,15 +302,16 @@ function add_p_dc_fr!(data, pf_res, σ_dict, sample_error)
         dst = [_DST.Normal(μ[i], σ_dict["p_dc"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
-            "cmp_id"    => data["branchdc"][b]["index"], #, data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]),
+            "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]),
             "var"       => :p_dcgrid,
-            "dst"       => dst
+            "dst"       => dst,
+            "direction" => :from
         )
         m_idx+=1
     end
 end
 
-function add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error)
+function add_p_dc_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
         c = length(branch["pt"])
@@ -274,9 +319,10 @@ function add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error)
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
-            "cmp_id"    => data["branchdc"][b]["index"], # data["branchdc"][b]["tbusdc"], data["branchdc"][b]["fbusdc"]),
+            "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["tbusdc"], data["branchdc"][b]["fbusdc"]),
             "var"       => :p_dcgrid,
-            "dst"       => dst
+            "dst"       => dst,
+            "direction" => :to
         )
         m_idx+=1
     end
