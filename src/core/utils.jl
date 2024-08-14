@@ -4,16 +4,15 @@ Retrieves the id of the component in measurement i. This is a tuple if the compo
 """
 function get_cmp_id(pm::_PM.AbstractPowerModel, nw::Int, i::Int)
     # TODO add clause for converters, if we end up considering them
-    # if  _PM.ref(pm, nw, :meas, i, "cmp") == :branch
-    #     branch_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
-    #     display("branch id is $branch_id")
-    #     display("meas is $i")
-    #     cmp_id = (branch_id, _PM.ref(pm,nw,:branch, branch_id)["f_bus"], _PM.ref(pm,nw,:branch,branch_id)["t_bus"])
-    if _PM.ref(pm, nw, :meas, i, "cmp") == :branchdc
-         branch_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
-         cmp_id = (branch_id, _PM.ref(pm,nw,:branchdc, branch_id)["fbusdc"], _PM.ref(pm,nw,:branchdc,branch_id)["tbusdc"])
-    else
-         cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+    cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+    if _PM.ref(pm, nw, :meas, i, "cmp") == :branchdc 
+        cmp_id = cmp_id[1]
+        bus1, bus2 = _PM.ref(pm, nw, :meas, i, "direction") == :from ? (_PM.ref(pm,nw,:branchdc, cmp_id)["fbusdc"], _PM.ref(pm,nw,:branchdc, cmp_id)["tbusdc"]) : (_PM.ref(pm,nw,:branchdc, cmp_id)["tbusdc"], _PM.ref(pm,nw,:branchdc, cmp_id)["fbusdc"])
+        cmp_id = (cmp_id, bus1, bus2)
+    elseif _PM.ref(pm, nw, :meas, i, "cmp") == :branch
+        cmp_id = cmp_id[1] 
+        bus1, bus2 = _PM.ref(pm, nw, :meas, i, "direction") == :from ? (_PM.ref(pm,nw,:branch, cmp_id)["f_bus"], _PM.ref(pm,nw,:branch, cmp_id)["t_bus"]) : (_PM.ref(pm,nw,:branch, cmp_id)["t_bus"], _PM.ref(pm,nw,:branch, cmp_id)["f_bus"])
+        cmp_id = (cmp_id, bus1, bus2)
     end
     return cmp_id
 end

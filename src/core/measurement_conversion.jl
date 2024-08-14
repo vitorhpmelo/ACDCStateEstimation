@@ -25,6 +25,7 @@ struct Multiplication<:ConversionType
     bus_ind::Int64
     mult1::Array
     mult2::Array
+    direction::Symbol
 end
 
 struct Tangent<:ConversionType
@@ -66,35 +67,37 @@ function assign_conversion_type_to_msr(pm::_PM.AbstractACPModel,i,msr::Symbol, c
 end
 
 function assign_conversion_type_to_msr_dc(pm::_PM.AbstractPowerModel, i, msr::Symbol, cmp_id; nw=nw)
-  if msr == :p_dcgrid
-      return Multiplication(msr, i,:branchdc, cmp_id, _PM.ref(pm,nw,:branchdc,cmp_id)["fbusdc"], [:i_dcgrid], [:vdcm])
-  else
-      error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
-  end
+    if msr == :p_dcgrid
+        branch_idx = cmp_id[1]             # this faff due to how powermodelsmcdc builds ref dictionary for powers
+        appropriate_bus_idx = cmp_id[2]    # should probably change that!!
+        return Multiplication(msr, i,:branchdc, branch_idx, appropriate_bus_idx, [:i_dcgrid], [:vdcm], _PM.ref(pm,nw,:meas,i)["direction"])
+    else
+        error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
+    end
 end
 
 function assign_conversion_type_to_msr_ac(pm::_PM.AbstractACPModel, i, msr::Symbol, cmp_id; nw=nw)
-  if msr == :cm
-      msr_type = SquareFraction(i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vm])
-  elseif msr == :cmg
-      msr_type = SquareFraction(i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vm])
-  elseif msr == :cmd
-      msr_type = SquareFraction(i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vm])
-  elseif msr == :cr
-      msr_type = Fraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q, :va], :vm)
-  elseif msr == :crg
-      msr_type = Fraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg, :va], :vm)
-  elseif msr == :crd
-      msr_type = Fraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd, :va], :vm)
-  elseif msr == :ci
-      msr_type = Fraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q, :va], :vm)
-  elseif msr == :cig
-      msr_type = Fraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg, :va], :vm)
-  elseif msr == :cid
-      msr_type = Fraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd, :va], :vm)
-  else
-      error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
-  end
+    if msr == :cm
+        msr_type = SquareFraction(i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vm])
+    elseif msr == :cmg
+        msr_type = SquareFraction(i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vm])
+    elseif msr == :cmd
+        msr_type = SquareFraction(i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vm])
+    # elseif msr == :cr
+    #     msr_type = Fraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q, :va], :vm)
+    # elseif msr == :crg
+    #     msr_type = Fraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg, :va], :vm)
+    # elseif msr == :crd
+    #     msr_type = Fraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd, :va], :vm)
+    # elseif msr == :ci
+    #     msr_type = Fraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q, :va], :vm)
+    # elseif msr == :cig
+    #     msr_type = Fraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg, :va], :vm)
+    # elseif msr == :cid
+    #     msr_type = Fraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd, :va], :vm)
+    else
+        error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
+    end
 end
 
 function assign_conversion_type_to_msr_ac(pm::_PM.AbstractACRModel,i,msr::Symbol, cmp_type;nw=nw)
@@ -109,59 +112,68 @@ function assign_conversion_type_to_msr_ac(pm::_PM.AbstractACRModel,i,msr::Symbol
         msr_type = SquareFraction(i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vi, :vr])
     elseif msr == :cmd
         msr_type = SquareFraction(i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vi, :vr])
-    elseif msr == :cr
-        msr_type = MultiplicationFraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vr, :vi])
-    elseif msr == :crg
-        msr_type = MultiplicationFraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vr, :vi])
-    elseif msr == :crd
-        msr_type = MultiplicationFraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vr, :vi])
-    elseif msr == :ci
-        msr_type = MultiplicationFraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vr, :vi])
-    elseif msr == :cig
-        msr_type = MultiplicationFraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vr, :vi])
-    elseif msr == :cid
-        msr_type = MultiplicationFraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vr, :vi])
+    # elseif msr == :cr
+    #     msr_type = MultiplicationFraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vr, :vi])
+    # elseif msr == :crg
+    #     msr_type = MultiplicationFraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vr, :vi])
+    # elseif msr == :crd
+    #     msr_type = MultiplicationFraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vr, :vi])
+    # elseif msr == :ci
+    #     msr_type = MultiplicationFraction(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:p, :q], [:vr, :vi])
+    # elseif msr == :cig
+    #     msr_type = MultiplicationFraction(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:pg, :qg], [:vr, :vi])
+    # elseif msr == :cid
+    #     msr_type = MultiplicationFraction(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:pd, :qd], [:vr, :vi])
     else
        error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and will be ignored")
     end
     return msr_type
 end
 
-function assign_conversion_type_to_msr_ac(pm::_PM.AbstractIVRModel,i,msr::Symbol, cmp_type;nw=nw)
-    cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
-    if msr == :vm
-        msr_type = Square(i,:bus, cmp_id, _PM.ref(pm,nw,:bus,cmp_id)["index"], [:vi, :vr])
-    elseif msr == :va
-        msr_type = Tangent(i, :bus, cmp_id, :vi, :vr)
-    elseif msr == :cm
-        msr_type = Square(i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci])
-    elseif msr == :cmg
-        msr_type = Square(i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig])
-    elseif msr == :cmd
-        msr_type = Square(i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid])
-    elseif msr == :ca
-        msr_type = Tangent(i, :branch, cmp_id, :ci, :cr)
-    elseif msr == :cag
-        msr_type = Tangent(i, :gen, cmp_id, :cig, :crg)
-    elseif msr == :cad
-        msr_type = Tangent(i, :load, cmp_id, :cid, :crd)
-    elseif msr == :p
-        msr_type = Multiplication(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci], [:vr, :vi])
-    elseif msr == :pg
-        msr_type = Multiplication(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig], [:vr, :vi])
-    elseif msr == :pd
-        msr_type = Multiplication(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid], [:vr, :vi])
-    elseif msr == :q
-        msr_type = Multiplication(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci], [:vr, :vi])
-    elseif msr == :qg
-        msr_type = Multiplication(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig], [:vr, :vi])
-    elseif msr == :qd
-        msr_type = Multiplication(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid], [:vr, :vi])
-    else
-       error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
-    end
-    return msr_type
-end
+###
+### NB: below an example for the IVR, from PowerModelsDistributionStateEstimation (will we use IVR here..???)
+### 
+# function assign_conversion_type_to_msr_ac(pm::_PM.AbstractIVRModel,i,msr::Symbol, cmp_type;nw=nw)
+#     cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
+#     if msr == :vm
+#         msr_type = Square(i,:bus, cmp_id, _PM.ref(pm,nw,:bus,cmp_id)["index"], [:vi, :vr])
+#     elseif msr == :va
+#         msr_type = Tangent(i, :bus, cmp_id, :vi, :vr)
+#     elseif msr == :cm
+#         msr_type = Square(i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci])
+#     elseif msr == :cmg
+#         msr_type = Square(i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig])
+#     elseif msr == :cmd
+#         msr_type = Square(i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid])
+#     elseif msr == :ca
+#         msr_type = Tangent(i, :branch, cmp_id, :ci, :cr)
+#     elseif msr == :cag
+#         msr_type = Tangent(i, :gen, cmp_id, :cig, :crg)
+#     elseif msr == :cad
+#         msr_type = Tangent(i, :load, cmp_id, :cid, :crd)
+#     elseif msr == :p
+#         msr_type = Multiplication(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci], [:vr, :vi], _PM.ref(pm,nw,:meas,i)["direction"])
+#     elseif msr == :pg
+#         msr_type = Multiplication(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig], [:vr, :vi], :nodirection)
+#     elseif msr == :pd
+#         msr_type = Multiplication(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid], [:vr, :vi], :nodirection)
+#     elseif msr == :q
+#         msr_type = Multiplication(msr, i,:branch, cmp_id, _PM.ref(pm,nw,:branch,cmp_id)["f_bus"], [:cr, :ci], [:vr, :vi], _PM.ref(pm,nw,:meas,i)["direction"])
+#     elseif msr == :qg
+#         msr_type = Multiplication(msr, i,:gen, cmp_id, _PM.ref(pm,nw,:gen,cmp_id)["gen_bus"], [:crg, :cig], [:vr, :vi], :nodirection)
+#     elseif msr == :qd
+#         msr_type = Multiplication(msr, i,:load, cmp_id, _PM.ref(pm,nw,:load,cmp_id)["load_bus"], [:crd, :cid], [:vr, :vi], :nodirection)
+#     else
+#        error("the chosen measurement $(msr) at $(_PM.ref(pm, nw, :meas, i, "cmp")) $(_PM.ref(pm, nw, :meas, i, "cmp_id")) is not supported and should be removed")
+#     end
+#     return msr_type
+# end
+
+#####
+#### MORE IVR STUFF
+# function no_conversion_needed(pm::_PM.AbstractIVRModel, msr_var::Symbol, cmp_type::Symbol)
+#     return msr_var ∈ [:vr, :vi, :cr, :ci, :crg, :cig, :crd, :cid]
+# end
 
 function no_conversion_needed(pm::_PM.AbstractACPModel, msr_var::Symbol, cmp_type::Symbol)
   if cmp_type == :branchdc
@@ -179,9 +191,6 @@ function no_conversion_needed(pm::_PM.AbstractACRModel, msr_var::Symbol, cmp_typ
   return msr_var ∈ [:vr, :vi, :pd, :qd, :pg, :qg, :p, :q]
 end
 
-function no_conversion_needed(pm::_PM.AbstractIVRModel, msr_var::Symbol, cmp_type::Symbol)
-  return msr_var ∈ [:vr, :vi, :cr, :ci, :crg, :cig, :crd, :cid]
-end
 
 function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, msr::SquareFraction; nw=nw)
 
@@ -240,15 +249,22 @@ function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, 
     m1 = []
     m2 = []
 
+    if msr.direction == :to
+        bus1 = msr.cmp_type == :branch ? _PM.ref(pm, nw, :branch,msr.cmp_id)["t_bus"] : _PM.ref(pm, nw, :branchdc,msr.cmp_id)["tbusdc"]
+        bus2 = msr.cmp_type == :branch ? _PM.ref(pm, nw, :branch,msr.cmp_id)["f_bus"] : _PM.ref(pm, nw, :branchdc,msr.cmp_id)["fbusdc"]
+    else
+        bus1 = msr.cmp_type == :branch ? _PM.ref(pm, nw, :branch,msr.cmp_id)["f_bus"] : _PM.ref(pm, nw, :branchdc,msr.cmp_id)["fbusdc"]
+        bus2 = msr.cmp_type == :branch ? _PM.ref(pm, nw, :branch,msr.cmp_id)["t_bus"] : _PM.ref(pm, nw, :branchdc,msr.cmp_id)["tbusdc"]
+    end
     for m in msr.mult1
         if occursin("v", String(m)) && msr.cmp_type != :bus
-            push!(m1, _PM.var(pm, nw, m, msr.bus_ind))
+            push!(m1, _PM.var(pm, nw, m, bus1))
         elseif msr.cmp_type == :branch
-            push!(m1, _PM.var(pm, nw, m, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branch,msr.cmp_id)["t_bus"])))
+            push!(m1, _PM.var(pm, nw, m, (msr.cmp_id, bus1, bus2)))
         elseif msr.cmp_type == :branchdc
-          push!(m1, _PM.var(pm, nw, m, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branchdc,msr.cmp_id)["tbusdc"])))
+          push!(m1, _PM.var(pm, nw, m, (msr.cmp_id, bus1, bus2)))
         else
-            push!(m1, _PM.var(pm, nw, m, msr.cmp_id))
+            push!(m1, _PM.var(pm, nw, m, bus1))
         end
     end
 
@@ -256,53 +272,45 @@ function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, 
         if occursin("v", String(mm)) && msr.cmp_type != :bus
             if msr.cmp_type == :branchdc && _PM.ref(pm, nw, :branchdc, msr.cmp_id)["line_confi"] == 1 # we need to align to the fact that all +-0 voltages exist but only two currents
                 if _PM.ref(pm, nw, :branchdc, msr.cmp_id)["connect_at"] == 0
-                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[1,2]])    
+                    push!(m2, _PM.var(pm, nw, mm, bus1)[[1,2]])    
                 elseif _PM.ref(pm, nw, :branchdc, msr.cmp_id)["connect_at"] == 1
-                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[1,3]])
+                    push!(m2, _PM.var(pm, nw, mm, bus1)[[1,3]])
                 else
-                    push!(m2, _PM.var(pm, nw, mm, msr.bus_ind)[[2,3]])
+                    push!(m2, _PM.var(pm, nw, mm, bus1)[[2,3]])
                 end
             else
-                push!(m2, _PM.var(pm, nw, mm, msr.bus_ind))
+                push!(m2, _PM.var(pm, nw, mm, bus1))
             end
-        elseif msr.cmp_type == :branch
-            push!(m2, _PM.var(pm, nw, mm, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branch, msr.cmp_id)["t_bus"])))
-        elseif msr.cmp_type == :branchdc
-            push!(m2, _PM.var(pm, nw, m, (msr.cmp_id, msr.bus_ind, _PM.ref(pm, nw, :branchdc,msr.cmp_id)["tbusdc"])))
+        elseif msr.cmp_type ∈ [:branch, :branchdc]
+            push!(m2, _PM.var(pm, nw, mm, (msr.cmp_id, bus1, bus2)))
         else
             push!(m2, _PM.var(pm, nw, mm, msr.cmp_id))
         end
     end
 
-    id = if msr.cmp_type == :branch 
-      (msr.cmp_id,  msr.bus_ind, _PM.ref(pm,nw,:branch,msr.cmp_id)["t_bus"])
-    elseif msr.cmp_type == :branchdc 
-      (msr.cmp_id,  msr.bus_ind, _PM.ref(pm,nw,:branchdc,msr.cmp_id)["tbusdc"])
-    else
-      msr.cmp_id
-    end
+    id = msr.cmp_type ∈ [:branch, :branchdc] ? (msr.cmp_id, bus1, bus2) : msr.cmp_id
     
     conn = get_active_connections(pm, nw, msr.cmp_type, msr.cmp_id)
     
     if msr.cmp_type == :branchdc
-      JuMP.@constraint(pm.model, [c in conn],
-              original_var[id][c] == m1[1][c]*m2[1][c]
-              )
+        JuMP.@constraint(pm.model, [c in conn],
+                original_var[id][c] == m1[1][c]*m2[1][c]
+                )
     else
-      if occursin("p", String(msr.msr_sym))
-          JuMP.@constraint(pm.model, [c in conn],
-              original_var[id][c] == m1[1][c]*m2[1][c]+m1[2][c]*m2[2][c]
-              )
-      elseif occursin("q", String(msr.msr_sym))
-          JuMP.@constraint(pm.model, [c in conn],
-              original_var[id][c] == -m1[2][c]*m2[1][c]+m1[1][c]*m2[2][c]
-              )
-      end
+        if occursin("p", String(msr.msr_sym))
+            JuMP.@constraint(pm.model, [c in conn],
+                original_var[id][c] == m1[1][c]*m2[1][c]+m1[2][c]*m2[2][c]
+                )
+        elseif occursin("q", String(msr.msr_sym))
+            JuMP.@constraint(pm.model, [c in conn],
+                original_var[id][c] == -m1[2][c]*m2[1][c]+m1[1][c]*m2[2][c]
+                )
+        end
     end
 end
 
 function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, msr::Tangent; nw=nw)
-    #TODO for v0.2.0 this needs to be general to every distribution or we need to provide an exception
+
     @warn "Performing a Tangent conversion only makes sense for Normal distributions and is in general not advised"
     conn = get_active_connections(pm, nw, msr.cmp_type, msr.cmp_id)
     for c in conn
@@ -340,7 +348,7 @@ function create_conversion_constraint(pm::_PM.AbstractPowerModel, original_var, 
     end
 
     den = _PM.var(pm, nw, msr.denominator, msr.bus_ind)
-    msr.cmp_type == :branch ? id = (msr.cmp_id,  msr.bus_ind, _PM.ref(pm,nw,:branch,msr.cmp_id)["t_bus"]) : id = msr.cmp_id
+    id = msr.cmp_type == :branch ? (msr.cmp_id,  msr.bus_ind, _PM.ref(pm,nw,:branch,msr.cmp_id)["t_bus"]) : msr.cmp_id
     conn = get_active_connections(pm, nw, msr.cmp_type, msr.cmp_id)
 
     if occursin("r", String(msr.msr_type))
