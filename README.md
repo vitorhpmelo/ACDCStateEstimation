@@ -14,7 +14,7 @@
 - PRIORITY: add tests
 - DISCUSS: which network cases are relevant? keep shortcuts to all?
 - add docs
-- add ci, etc.
+- add github workflows
 
 ## Notes
 

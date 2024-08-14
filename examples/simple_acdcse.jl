@@ -56,7 +56,7 @@ _ACDCSE.get_dc_power!(result, data_pf) # -> the `result` dictionary only has dc 
 
 # let's build the synthetic measurements for the SE using the variances and the power flow results
 # ⚠⚠⚠ IMPORTANT! ⚠⚠⚠ `sample_error` = false means NO noise is added to the PF inputs and outputs
-_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = false, measurements = ["vm", "va", "p_g","p_to", "q_to", "vdcm", "pg", 
+_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = false, measurements = ["vm", "va", "p_to", "q_to", "vdcm", "pg", 
                                 "pd", "qg", "qd", "p_dc_to", "p_dc_fr"])
 
 # this function adds some settings to the state estimation, e.g., says if we minimize WLS or WLAV. 
@@ -76,7 +76,7 @@ se_res = _ACDCSE.solve_acdcse(data_se, _PM.ACPPowerModel, nlp_optimizer)
 # `sample_error = true`
 ####################################################################
 
-_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = true, measurements = ["vm", "va", "p_g","p_to", "q_to", "vdcm", "pg", 
+_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = true, measurements = ["vm", "va", "p_to", "q_to", "vdcm", "pg", 
                                 "pd", "qg", "qd", "p_dc_to", "p_dc_fr"])
 
 # you can appreciate how the objective is not zero anymore, and the estimated variable values are a bit different from the OPF results
@@ -102,7 +102,7 @@ _ACDCSE.get_dc_power!(result, data_pf) # -> the `result` dictionary only has dc 
 
 # now let's load synthetic measurements from the new power flow results
 # you can play with the `sample_error` boolean to see how the errors/residuals behave 😃
-_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = false, measurements = ["vm", "va", "p_g","p_to", "q_to", "vdcm", "pg", 
+_ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = false, measurements = ["vm", "va", "p_to", "q_to", "vdcm", "pg", 
                                 "pd", "qg", "qd", "p_dc_to", "p_dc_fr"])
 
 # but let's run the state estimation on the old data (no de-energized branch)
