@@ -6,7 +6,9 @@ and adds them to the network `data`, which is then ready for state estimation
 function powerflow2measurements!(data::Dict, pf_res::Dict, σ_dict::Dict; sample_error::Bool = true, measurements::Vector{String} = ["vm", "vdcm"])
     data["meas"] = Dict{String, Any}()
 
+    #######################
     ### AC MEASUREMENTS ###
+    #######################
 
     # NODAL measurements (voltages and injections)
     if "vm" ∈ measurements add_vm!(data, pf_res, σ_dict, sample_error) end     # ac bus voltage magnitude
@@ -36,12 +38,12 @@ function powerflow2measurements!(data::Dict, pf_res::Dict, σ_dict::Dict; sample
     # if "ci_fr" ∈ measurements add_ci_fr!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag from
     # if "ci_to" ∈ measurements add_ci_to!(data, pf_res, σ_dict, sample_error) end # ac current rectangular imag to
 
+    #######################
     ### DC MEASUREMENTS ###
+    #######################
 
     # NODAL measurements (voltages and injections)
     if "vdcm" ∈ measurements add_vdcm!(data, pf_res, σ_dict, sample_error) end # dc bus voltage
-
-
     #TODO ADD injections (FROM CONVERTERS)
 
     # FLOW measurements

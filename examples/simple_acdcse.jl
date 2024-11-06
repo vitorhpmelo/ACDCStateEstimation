@@ -51,8 +51,11 @@ _ACDCSE.get_dc_power!(result, data_pf) # -> the `result` dictionary only has dc 
     "q_ac"     => 0.01, # Reactive power flow on an AC branch (either injection or flow, really)
     "vdcm"     => 0.01, # DC voltage magnitude
     "p_dc"     => 0.01, # DC power (either injection or flow)
-    "i_dcgrid" => 0.01  # DC current (either injection or flow)
+    "i_dcgrid" => 0.01,  # DC current (either injection or flow)
+    "cm"       => 0.01
 )
+
+_ACDCSE.add_current_flows_to_se_result!(result)
 
 # let's build the synthetic measurements for the SE using the variances and the power flow results
 # ⚠⚠⚠ IMPORTANT! ⚠⚠⚠ `sample_error` = false means NO noise is added to the PF inputs and outputs

@@ -39,6 +39,7 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
         msr_var = _PM.ref(pm, nw, :meas, i, "var")
         cmp_id = _PM.ref(pm, nw, :meas, i, "cmp_id")
         cmp_type = _PM.ref(pm, nw, :meas, i, "cmp")
+        direction = haskey(_PM.ref(pm, nw, :meas, i), "direction") ? _PM.ref(pm, nw, :meas, i, "direction") : :none
         connections = get_active_connections(pm, nw, cmp_type, cmp_id)
         if no_conversion_needed(pm, msr_var, cmp_type)
             #no additional variable is created, it is already by default in the formulation
@@ -50,8 +51,8 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
                 _PM.var(pm, nw)[msr_var] = Dict(cmp_id => JuMP.@variable(pm.model,
                     [c in connections], base_name="$(nw)_$(String(msr_var))_$(cmp_id)"))
             end
-            msr_type = assign_conversion_type_to_msr(pm, i, msr_var, cmp_type; nw=nw)
-            create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type; nw=nw)
+            msr_type = assign_conversion_type_to_msr(pm, i, msr_var, cmp_type, direction; nw=nw)
+            create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type, direction; nw=nw)
         end
     end
 end
