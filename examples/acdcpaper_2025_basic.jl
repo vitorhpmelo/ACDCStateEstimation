@@ -54,8 +54,8 @@ data_se_noiseless_39 = _ACDCSE.quickget_case39()
 data_se_noisy_39 = _ACDCSE.quickget_case39()
 data_pf_39 = _ACDCSE.quickget_case39()
 
-result, σ_dict, data_se_noiseless_39 = generate_data_basic_acdcse(data_pf_39, data_se_noiseless_39, nlp_optimizer, sample_error = false);
-result, σ_dict, data_se_noisy_39 = generate_data_basic_acdcse(data_pf_39, data_se_noisy_39, nlp_optimizer, sample_error = true);
+result_39, σ_dict, data_se_noiseless_39 = generate_data_basic_acdcse(data_pf_39, data_se_noiseless_39, nlp_optimizer, sample_error = false);
+result_39, σ_dict, data_se_noisy_39 = generate_data_basic_acdcse(data_pf_39, data_se_noisy_39, nlp_optimizer, sample_error = true);
 
 se_res_noiseless_39 = _ACDCSE.solve_acdcse(data_se_noiseless_39, _PM.ACPPowerModel, nlp_optimizer)
 se_res_noisy_39 = _ACDCSE.solve_acdcse(data_se_noisy_39, _PM.ACPPowerModel, nlp_optimizer)
@@ -64,8 +64,14 @@ data_se_noiseless_67 = _ACDCSE.quickget_case67()
 data_se_noisy_67 = _ACDCSE.quickget_case67()
 data_pf_67 = _ACDCSE.quickget_case67()
 
-result, σ_dict, data_se_noiseless_67 = generate_data_basic_acdcse(data_pf_67, data_se_noiseless_67, nlp_optimizer, sample_error = false);
-result, σ_dict, data_se_noisy_67 = generate_data_basic_acdcse(data_pf_67, data_se_noisy_67, nlp_optimizer, sample_error = true);
+result_67, σ_dict, data_se_noiseless_67 = generate_data_basic_acdcse(data_pf_67, data_se_noiseless_67, nlp_optimizer, sample_error = false);
+result_67, σ_dict, data_se_noisy_67 = generate_data_basic_acdcse(data_pf_67, data_se_noisy_67, nlp_optimizer, sample_error = true);
 
 se_res_noiseless_67 = _ACDCSE.solve_acdcse(data_se_noiseless_67, _PM.ACPPowerModel, nlp_optimizer)
 se_res_noisy_67 = _ACDCSE.solve_acdcse(data_se_noisy_67, _PM.ACPPowerModel, nlp_optimizer)
+
+ΔV_ac_39 = abs.([bus["vm"] for (b,bus) in result_39["solution"]["bus"]].-[bus["vm"] for (b,bus) in se_res_noisy_39["solution"]["bus"]])
+ΔV_ac_67 = abs.([bus["vm"] for (b,bus) in result_67["solution"]["bus"]].-[bus["vm"] for (b,bus) in se_res_noisy_67["solution"]["bus"]])
+
+ΔV_dc_39 = abs.(vcat([bus["vm"] for (b,bus) in result_39["solution"]["busdc"]]...).-vcat([bus["vm"] for (b,bus) in se_res_noisy_39["solution"]["busdc"]]...))
+ΔV_dc_67 = abs.(vcat([bus["vm"] for (b,bus) in result_67["solution"]["busdc"]]...).-vcat([bus["vm"] for (b,bus) in se_res_noisy_67["solution"]["busdc"]]...))
