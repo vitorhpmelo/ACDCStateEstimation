@@ -7,7 +7,7 @@
 function prepare_data_for_se_default!(data::Dict; exceptions::Vector{Int} = Int[])
     data["se_settings"] = Dict(
         "rescaler" => 1,
-        "criterion" => "rwlav"
+        "criterion" => "rwls"
     )
     PV2PQbuses!(data)
     remove_slack_buses!(data, exceptions=exceptions)
