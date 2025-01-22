@@ -60,8 +60,9 @@ end
 function add_vm!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))
     for (b, bus) in pf_res["solution"]["bus"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(bus["vm"], σ_dict["vm"]), ) : bus["vm"]
-        dst = [_DST.Normal(μ, σ_dict["vm"])]
+        σ = maximum([abs(bus["vm"]*σ_dict["vm"]/3), σ_dict["vm"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(bus["vm"], σ), ) : bus["vm"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :bus,
             "cmp_id"  => parse(Int, b),
@@ -75,8 +76,9 @@ end
 function add_va!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))
     for (b, bus) in pf_res["solution"]["bus"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(bus["va"], σ_dict["va"]), ) : bus["va"]
-        dst = [_DST.Normal(μ, σ_dict["va"])]
+        σ = maximum([abs(bus["va"]*σ_dict["va"]/3), σ_dict["va"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(bus["va"], σ), ) : bus["va"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :bus,
             "cmp_id"  => parse(Int, b),
@@ -90,8 +92,9 @@ end
 function add_p_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["pf"], σ_dict["p_ac"]), ) : branch["pf"]
-        dst = [_DST.Normal(μ, σ_dict["p_ac"])]
+        σ = maximum([abs(σ_dict["p_ac"]*branch["pf"]/3), σ_dict["p_ac"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["pf"], σ), ) : branch["pf"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["f_bus"], data["branch"][br]["t_bus"]),
@@ -106,8 +109,9 @@ end
 function add_q_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["qf"], σ_dict["q_ac"]), ) : branch["qf"]
-        dst = [_DST.Normal(μ, σ_dict["q_ac"])]
+        σ = maximum([abs(σ_dict["q_ac"]*branch["qf"]/3), σ_dict["q_ac"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["qf"], σ), ) : branch["qf"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["f_bus"], data["branch"][br]["t_bus"]),
@@ -122,8 +126,9 @@ end
 function add_p_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["pt"], σ_dict["p_ac"]), ) : branch["pt"]
-        dst = [_DST.Normal(μ, σ_dict["p_ac"])]
+        σ = maximum([abs(σ_dict["p_ac"]*branch["pt"]/3), σ_dict["p_ac"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["pt"], σ), ) : branch["pt"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["t_bus"], data["branch"][br]["f_bus"]),
@@ -138,8 +143,9 @@ end
 function add_q_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["qt"], σ_dict["q_ac"]), ) : branch["qt"]
-        dst = [_DST.Normal(μ, σ_dict["q_ac"])]
+        σ = maximum([abs(σ_dict["q_ac"]*branch["qt"]/3), σ_dict["q_ac"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["qt"], σ), ) : branch["qt"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
             "cmp_id"  => (data["branch"][br]["index"], data["branch"][br]["t_bus"], data["branch"][br]["f_bus"]),
@@ -154,8 +160,9 @@ end
 function add_pg!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (g, gen) in pf_res["solution"]["gen"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(gen["pg"], σ_dict["pg"]), ) : gen["pg"]
-        dst = [_DST.Normal(μ, σ_dict["pg"])]
+        σ = maximum([abs(σ_dict["pg"]*gen["pg"]/3), σ_dict["pg"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(gen["pg"], σ), ) : gen["pg"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :gen,
             "cmp_id"  => data["gen"][g]["index"],
@@ -169,8 +176,9 @@ end
 function add_qg!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (g, gen) in pf_res["solution"]["gen"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(gen["qg"], σ_dict["qg"]), ) : gen["qg"]
-        dst = [_DST.Normal(μ, σ_dict["qg"])]
+        σ = maximum([abs(σ_dict["qg"]*gen["qg"]/3), σ_dict["qg"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(gen["qg"], σ), ) : gen["qg"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :gen,
             "cmp_id"  => data["gen"][g]["index"],
@@ -184,8 +192,9 @@ end
 function add_pd!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (l, load) in data["load"] # contrary to generators, loads are not (o)pf variables, so can't find them in the solution dict
-        μ = sample_error ? _RAN.rand(_DST.Normal(load["pd"], σ_dict["pd"]), ) : load["pd"]
-        dst = [_DST.Normal(μ, σ_dict["pd"])]
+        σ = maximum([abs(σ_dict["pd"]*load["pd"]/3), σ_dict["pd"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(load["pd"], σ), ) : load["pd"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :load,
             "cmp_id"  => data["load"][l]["index"],
@@ -199,8 +208,9 @@ end
 function add_qd!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (l, load) in data["load"] # contrary to generators, loads are not (o)pf variables, so can't find them in the solution dict
-        μ = sample_error ? _RAN.rand(_DST.Normal(load["qd"], σ_dict["qd"]), ) : load["qd"]
-        dst = [_DST.Normal(μ, σ_dict["qd"])]
+        σ = maximum([abs(σ_dict["qd"]*load["qd"]/3), σ_dict["qd"]/3])
+        μ = sample_error ? _RAN.rand(_DST.Normal(load["qd"], σ), ) : load["qd"]
+        dst = [_DST.Normal(μ, σ)]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :load,
             "cmp_id"  => data["load"][l]["index"],
@@ -214,7 +224,7 @@ end
 function add_cm_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], σ_dict["cm"]), ) : branch["cmf"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], branch["cmf"]*σ_dict["cm"]/3), ) : branch["cmf"]
         dst = [_DST.Normal(μ, σ_dict["cm"])]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
@@ -230,7 +240,7 @@ end
 function add_cm_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (br, branch) in pf_res["solution"]["branch"]
-        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], σ_dict["cm"]), ) : branch["cmf"]
+        μ = sample_error ? _RAN.rand(_DST.Normal(branch["cmf"], σ_dict["cm"]*branch["cmf"]/3), ) : branch["cmf"]
         dst = [_DST.Normal(μ, σ_dict["cm"])]
         data["meas"]["$m_idx"] = Dict(
             "cmp"     => :branch,
@@ -248,8 +258,9 @@ end
 function add_vdcm!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, bus) in pf_res["solution"]["busdc"]
-        μ = sample_error ? [_RAN.rand(_DST.Normal(bus["vm"][i], σ_dict["vdcm"]), ) for i in 1:3] : bus["vm"]
-        dst = [_DST.Normal(μ[i], σ_dict["vdcm"]) for i in 1:3]
+        σ = [maximum([abs(bus["vm"][i]* σ_dict["vdcm"]/3), σ_dict["vdcm"]/3]) for i in 1:3]
+        μ = sample_error ? [_RAN.rand(_DST.Normal(bus["vm"][i], σ[i]), ) for i in 1:3] : bus["vm"]
+        dst = [_DST.Normal(μ[i], σ[i]) for i in 1:3]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :busdc,
             "cmp_id"    => parse(Int, b),
@@ -266,8 +277,9 @@ function add_i_dcgrid_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
         c = length(branch["i_from"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_from"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_from"][1:c]
-        dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
+        σ = maximum.([abs.(branch["i_from"].*σ_dict["i_dcgrid"]/3), σ_dict["i_dcgrid"]/3])
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_from"][i], σ[i]), ) for i in 1:c] : branch["i_from"][1:c]
+        dst = [_DST.Normal(μ[i], σ[i]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
             "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["fbusdc"], data["branchdc"][b]["tbusdc"]), 
@@ -283,8 +295,9 @@ function add_i_dcgrid_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
         c = length(branch["i_to"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_to"][i], σ_dict["i_dcgrid"]), ) for i in 1:c] : branch["i_to"][1:c]
-        dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
+        σ = maximum.([abs.(branch["i_to"].*σ_dict["i_dcgrid"]/3), σ_dict["i_dcgrid"]/3])
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["i_to"][i], σ[i]), ) for i in 1:c] : branch["i_to"][1:c]
+        dst = [_DST.Normal(μ[i], σ[i]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
             "cmp_id"    => (data["branchdc"][b]["index"], data["branchdc"][b]["tbusdc"], data["branchdc"][b]["fbusdc"]),
@@ -300,7 +313,7 @@ function add_p_dc_fr!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
         c = length(branch["pf"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["pf"][i], σ_dict["p_dc"]), ) for i in 1:c] : branch["pf"][1:c]
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["pf"][i], branch["pf"][i]*σ_dict["p_dc"]/3), ) for i in 1:c] : branch["pf"][1:c]
         dst = [_DST.Normal(μ[i], σ_dict["p_dc"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
@@ -317,7 +330,7 @@ function add_p_dc_to!(data, pf_res, σ_dict, sample_error)
     m_idx = isempty(data["meas"]) ? 1 : maximum(parse.(Int, keys(data["meas"])))+1
     for (b, branch) in pf_res["solution"]["branchdc"]
         c = length(branch["pt"])
-        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["pt"][i], σ_dict["p_dc"]), ) for i in 1:c] : branch["pt"][1:c]
+        μ = sample_error ? [_RAN.rand(_DST.Normal(branch["pt"][i], branch["pt"][i]*σ_dict["p_dc"]/3), ) for i in 1:c] : branch["pt"][1:c]
         dst = [_DST.Normal(μ[i], σ_dict["i_dcgrid"]) for i in 1:c]
         data["meas"]["$m_idx"] = Dict(
             "cmp"       => :branchdc,
