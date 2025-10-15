@@ -9,10 +9,12 @@ a different value in the measurement dictionary.
 function variable_residual( pm::_PM.AbstractPowerModel;
                             nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool = true  )
 
-    connections = Dict(i => length(meas["dst"]) for (i,meas) in _PM.ref(pm, nw, :meas) )
+    connections = Dict(i => length(meas["dst"]) for (i,meas) in _PM.ref(pm, nw, :meas) ) #creates a dictionary with all meas connections (vector meas)
 
-    res = _PM.var(pm, nw)[:res] = Dict(i => JuMP.@variable(pm.model,
-        [c in 1:connections[i]], base_name = "$(nw)_res_$(i)",
+    res = _PM.var(pm, nw)[:res] = Dict(
+        i => JuMP.@variable(pm.model,
+        [c in 1:connections[i]], 
+        base_name = "$(nw)_res_$(i)",
         start = _PMMCDC.comp_start_value(_PM.ref(pm, nw, :meas, i), "res_start", 0.0)
         ) for i in _PM.ids(pm, nw, :meas)
     )
@@ -27,6 +29,84 @@ function variable_residual( pm::_PM.AbstractPowerModel;
 
     report && _PM.sol_component_value(pm, nw, :meas, :res, _PM.ids(pm, nw, :meas), res)
 end
+
+"""
+    set_variable_start_value!(pm::_PM.AbstractPowerModel, var_symbol::Symbol, start_values::Dict)
+
+Sets the initial value (start) of existing JuMP variables in the model.
+- `var_symbol`: Symbol of the variable (e.g., :res, :prior, :pd, etc.)
+- `start_values`: Dict mapping variable indices to start values (can be scalar or vector)
+"""
+function set_variable_start_value(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_default)
+    
+    for i in _PM.ids(pm, nw, :bus)
+        if haskey(_PM.ref(pm, nw, :bus, i), "vm_start") && haskey(_PM.ref(pm, nw, :bus, i), "va_start")
+            vm_start = _PM.ref(pm, nw, :bus, i, "vm_start")
+            va_start = _PM.ref(pm, nw, :bus, i, "va_start")
+
+            JuMP.set_start_value(_PM.var(pm, nw, :vm, i), vm_start)
+            JuMP.set_start_value(_PM.var(pm, nw, :va, i), va_start)
+        end
+    end
+    for i in _PM.ids(pm, nw, :busdc)
+        if haskey(_PM.ref(pm, nw, :busdc, i), "vm_start")
+            vm_start = _PM.ref(pm, nw, :busdc, i, "vm_start")
+            for c in 1:length(_PM.var(pm, nw, :vdcm, i))
+                JuMP.set_start_value(_PM.var(pm, nw, :vdcm, i)[c], vm_start[c])
+            end
+        end
+    end
+
+    for i in _PM.ids(pm, nw, :convdc)
+        if haskey(_PM.ref(pm, nw, :convdc, i), "vmf_start")
+            vmf_start = _PM.ref(pm, nw, :convdc, i, "vmf_start")
+            for c in 1:length(_PM.var(pm, nw, :vmf, i))
+                JuMP.set_start_value(_PM.var(pm, nw, :vmf, i)[c], vmf_start[c])
+            end
+        end
+        if haskey(_PM.ref(pm, nw, :convdc, i), "vaf_start")
+            vaf_start = _PM.ref(pm, nw, :convdc, i, "vaf_start")
+            for c in 1:length(_PM.var(pm, nw, :vaf, i))
+                JuMP.set_start_value(_PM.var(pm, nw, :vaf, i)[c], vaf_start[c])
+            end
+        end
+        if haskey(_PM.ref(pm, nw, :convdc, i), "vmc_start")
+            vmc_start = _PM.ref(pm, nw, :convdc, i, "vmc_start")
+            for c in 1:length(_PM.var(pm, nw, :vmc, i))
+                JuMP.set_start_value(_PM.var(pm, nw, :vmc, i)[c], vmc_start[c])
+            end
+        end
+        if haskey(_PM.ref(pm, nw, :convdc, i), "vac_start")
+            vac_start = _PM.ref(pm, nw, :convdc, i, "vac_start")
+            for c in 1:length(_PM.var(pm, nw, :vac, i))
+                JuMP.set_start_value(_PM.var(pm, nw, :vac, i)[c], vac_start[c])
+            end
+        end
+
+    end
+end
+
+function variable_prior( pm::_PM.AbstractPowerModel;
+                            nw::Int=_PM.nw_id_default, bounded::Bool = true, report::Bool = true  ) #TODO
+
+    connections = Dict(i => 1 for (i,meas) in _PM.ref(pm, nw, :prior) ) 
+
+    prior = _PM.var(pm, nw)[:prior] = Dict(
+        i => JuMP.@variable(pm.model, [c in 1:connections[i]],
+        base_name = "$(nw)_prior_$(i)",
+        start = _PMMCDC.comp_start_value(_PM.ref(pm, nw, :prior, i), "prior_start", 0.0) # set initial value
+        ) for i in _PM.ids(pm, nw, :prior)
+    )
+    if bounded
+        for i in _PM.ids(pm, nw, :prior) #might make sense to put an inferior bound
+            JuMP.set_lower_bound(prior[i][1], -1.e1)
+            JuMP.set_upper_bound(prior[i][1], 1.e1)
+        end
+    end
+
+    report && _PM.sol_component_value(pm, nw, :prior, :prior, _PM.ids(pm, nw, :prior), prior) #TODO do it
+end
+
 """
     variable_measurement
 checks for every measurement if the measured
@@ -41,6 +121,7 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
         cmp_type = _PM.ref(pm, nw, :meas, i, "cmp")
         direction = haskey(_PM.ref(pm, nw, :meas, i), "direction") ? _PM.ref(pm, nw, :meas, i, "direction") : :none
         connections = get_active_connections(pm, nw, cmp_type, cmp_id)
+
         if no_conversion_needed(pm, msr_var, cmp_type)
             #no additional variable is created, it is already by default in the formulation
         else
@@ -52,7 +133,7 @@ function variable_measurement(pm::_PM.AbstractPowerModel; nw::Int=_PM.nw_id_defa
                     [c in connections], base_name="$(nw)_$(String(msr_var))_$(cmp_id)"))
             end
             msr_type = assign_conversion_type_to_msr(pm, i, msr_var, cmp_type, direction; nw=nw)
-            create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type, direction; nw=nw)
+            create_conversion_constraint(pm, _PM.var(pm, nw)[msr_var], msr_type; nw=nw)
         end
     end
 end

@@ -1,11 +1,11 @@
-import ACDCStateEstimation as _ACDCSE
+import ACDCStateEstimation as _ACDCSE #ACDC State estimation package
 
-import Ipopt
-import PowerModels as _PM
-import PowerModelsMCDC as _PMMCDC
-import Plots
+import Ipopt # Interior point solver
+import PowerModels as _PM # ACpower models package from ELECTA
+import PowerModelsMCDC as _PMMCDC # MCDC power models from ELECTA
+import Plots # plotting package
 
-using LaTeXStrings
+using LaTeXStrings # latex strings package
 
 include("utils.jl")
 
@@ -13,15 +13,18 @@ nlp_optimizer = _PMMCDC.optimizer_with_attributes(
     Ipopt.Optimizer, "tol" => 1e-6, "print_level" => 5, "sb" => "yes"
 )
 
-data_se_noiseless = _ACDCSE.quickget_case5()
-data_se_noisy = _ACDCSE.quickget_case5()
-data_pf = _ACDCSE.quickget_case5()
+data_se_noiseless = _ACDCSE.quickget_case5() #loads network data 
+data_se_noisy = _ACDCSE.quickget_case5() #loads network data
+data_pf = _ACDCSE.quickget_case5() #loads network data
 
-result, σ_dict, data_se_noiseless = generate_data_basic_acdcse(data_pf, data_se_noiseless, nlp_optimizer, sample_error = false);
-result, σ_dict, data_se_noisy = generate_data_basic_acdcse(data_pf, data_se_noisy, nlp_optimizer, sample_error = true);
+result, σ_dict, data_se_noiseless = generate_data_basic_acdcse(data_pf, data_se_noiseless, nlp_optimizer, sample_error = false,min); # solves powerflow and generates SE data
+result, σ_dict, data_se_noisy = generate_data_basic_acdcse(data_pf, data_se_noisy, nlp_optimizer, sample_error = true); # solves powerflow and generates SE data
 
-se_res_noiseless = _ACDCSE.solve_acdcse(data_se_noiseless, _PM.ACPPowerModel, nlp_optimizer)
-se_res_noisy = _ACDCSE.solve_acdcse(data_se_noisy, _PM.ACPPowerModel, nlp_optimizer)
+se_res_noiseless = _ACDCSE.solve_acdcse(data_se_noiseless, _PM.ACPPowerModel, nlp_optimizer) #Solve SE
+se_res_noisy = _ACDCSE.solve_acdcse(data_se_noisy, _PM.ACPPowerModel, nlp_optimizer) #Solve SE
+
+
+
 
 ground_truth_1 = [busdc["vm"][1] for (b,busdc) in result["solution"]["busdc"]]
 ground_truth_2 = [busdc["vm"][2] for (b,busdc) in result["solution"]["busdc"]]

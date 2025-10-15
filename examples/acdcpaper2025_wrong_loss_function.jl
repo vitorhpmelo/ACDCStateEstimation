@@ -1,8 +1,8 @@
-import ACDCStateEstimation as _ACDCSE
+import ACDCStateEstimation as _ACDCSE # ACDC state estimation lib
 
-import Ipopt
-import PowerModels as _PM
-import PowerModelsMCDC as _PMMCDC
+import Ipopt # Interior point optimization package  
+import PowerModels as _PM #AC power models ELECTA 
+import PowerModelsMCDC as _PMMCDC # MCDC power models ELECTA
 
 include("utils.jl")
 

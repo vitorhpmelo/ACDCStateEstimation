@@ -33,10 +33,18 @@ function remove_slack_buses!(data::Dict; exceptions::Vector{Int} = Int[])
         data["bus"]["$b"]["bus_type"] = 1
     end
 end
+function ACDCSE_dir()
+    return dirname(dirname(pathof(ACDCStateEstimation)))
+end
+
 """
 Shortcut to get the network data of case5_2grids_MC.m from local PowerModelsMCDC.jl
 """
 quickget_case5() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case5_2grids_MC.m"))
+
+quickget_case5alt() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case5_2grids_MCalt.m"))
+
+quickget_case5_paper() = _PMMCDC.parse_file(joinpath(ACDCSE_dir(), "test/data/matacdc_scripts/case5_2grids_MCalt.m"))
 """
 Shortcut to get the network data of case67mcdc_scopf4.m from local PowerModelsMCDC.jl
 """
@@ -49,3 +57,7 @@ quickget_case39() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_
 Shortcut to get the network data of case3120sp_mcdc.m from local PowerModelsMCDC.jl
 """
 quickget_case3120() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case3120sp_mcdc.m"))
+
+
+quickget_case118() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case118_mcdc.m"))
+quickget_case118_paper() = _PMMCDC.parse_file(joinpath(ACDCSE_dir(), "test/data/matacdc_scripts/case118_mcdc.m"))

@@ -16,20 +16,36 @@ function get_cmp_id(pm::_PM.AbstractPowerModel, nw::Int, i::Int)
     end
     return cmp_id
 end
+
+
 """
     function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id)
 Returns the list of terminals, connections or t_ and f_connections, depending on the type of the component.
 """
-function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id)
+function get_active_connections(pm::_PM.AbstractPowerModel, nw::Int, cmp_type::Symbol, cmp_id ; var=:vm::Symbol)
     if cmp_type == :busdc
        return [1, 2, 3]
     elseif cmp_type == :branchdc
        return _PM.ref(pm, nw, cmp_type, cmp_id[1])["line_confi"] == 2 ? [1,2,3] : [1]
 #    elseif cmp_type == :branchdc
 #         active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["line_confi"] == 2 ? [1,2,3] : get_monopolar_conn(_PM.ref(pm, nw, cmp_type, cmp_id)["connect_at"])
-#     elseif cmp_type == :convdc
-#         active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["conv_confi"] == 2 ? [1,2,3] : get_monopolar_conn(_PM.ref(pm, nw, cmp_type, cmp_id)["connect_at"])
-   else
+    elseif cmp_type == :convdc
+        if !occursin("dc", string(var)) 
+            active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["conv_confi"] == 2 ? [1,2] : [1]
+        elseif !occursin("g", string(var))
+            if _PM.ref(pm, nw, cmp_type, cmp_id)["conv_confi"] == 2
+                active_conn =  [1,2,3]
+            else
+                # active_conn = get_monopolar_conn(_PM.ref(pm, nw, cmp_type, cmp_id)["connect_at"])
+                active_conn=[1,2] #TODO not sure 
+            end
+        elseif !occursin("shunt", string(var))
+            active_conn= active_conn =  _PM.ref(pm, nw, cmp_type, cmp_id)["conv_confi"] == 2 ? [1,2] : [1] #TODO not sure
+        else 
+            active_conn = [1]
+        end
+        return active_conn
+    else
        return [1]
    end
 end

@@ -6,16 +6,17 @@ criterion assigned to each individual measurement in data["meas"]["m"]["crit"].
 """
 function constraint_residual(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default)
 
-    cmp_id = get_cmp_id(pm, nw, i)
+    cmp_id = get_cmp_id(pm, nw, i) #gets the component id from the measurement
     res = _PM.var(pm, nw, :res, i)
     var = _PM.var(pm, nw, _PM.ref(pm, nw, :meas, i, "var"), cmp_id)
     dst = _PM.ref(pm, nw, :meas, i, "dst")
     rsc = _PM.ref(pm, nw, :se_settings)["rescaler"]
     crit = _PM.ref(pm, nw, :meas, i, "crit")
+    varmeas=_PM.ref(pm, nw, :meas, i,"var")
     
-    conns = get_active_connections(pm, nw, _PM.ref(pm, nw, :meas, i, "cmp"), cmp_id)
+    conns = get_active_connections(pm, nw, _PM.ref(pm, nw, :meas, i, "cmp"), cmp_id, var=varmeas)
 
-    for (idx, c) in enumerate(conns)
+    for (idx, c) in enumerate(conns) #check via this 
         if (occursin("ls", crit) || occursin("lav", crit)) && isa(dst[idx], _DST.Normal)
             μ, σ = occursin("w", crit) ? (_DST.mean(dst[idx]), _DST.std(dst[idx])) : (_DST.mean(dst[idx]), 1.0)
         end
@@ -46,6 +47,74 @@ function constraint_residual(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_
         end
     end
 end
+
+
+
+
+function constraint_prior(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default) #TODO prior
+
+    cmp_id_i = _PM.ref(pm, nw, :prior, i, "cmp_id_i") 
+    cmp_id_j = _PM.ref(pm, nw, :prior, i, "cmp_id_j")
+    conn_i= _PM.ref(pm, nw, :prior, i, "conn_i")
+    conn_j= _PM.ref(pm, nw, :prior, i, "conn_j")
+    prior = _PM.var(pm, nw, :prior, i) # gets the prior variable
+
+    
+    var_i = _PM.var(pm, nw, _PM.ref(pm, nw, :prior, i, "var_i"), cmp_id_i)[conn_i] #gets the var_i connections might be a problem
+    
+    var_j = _PM.var(pm, nw, _PM.ref(pm, nw, :prior, i, "var_j"), cmp_id_j)[conn_j] #gets the var_j connections might be a problem
+
+    π_i = _PM.ref(pm, nw, :prior, i, "π_i") # previous value of the variable i
+    π_j = _PM.ref(pm, nw, :prior, i, "π_j") # previous value of the variable j
+    a_ij= _PM.ref(pm, nw, :prior, i, "a_ij") 
+
+    rsc = _PM.ref(pm, nw, :se_settings)["rescaler"]
+    
+    JuMP.@constraint(pm.model,
+        prior[1]*a_ij*rsc^2 == (π_i-var_i)*(π_j-var_j)
+    )
+
+
+  
+
+end
+
+
+
+function constraint_prior_rlx(pm::_PM.AbstractPowerModel, i::Int; nw::Int=_PM.nw_id_default) #TODO prior
+
+    cmp_id_i = _PM.ref(pm, nw, :prior, i, "cmp_id_i") 
+    cmp_id_j = _PM.ref(pm, nw, :prior, i, "cmp_id_j")
+    conn_i= _PM.ref(pm, nw, :prior, i, "conn_i")
+    conn_j= _PM.ref(pm, nw, :prior, i, "conn_j")
+    prior = _PM.var(pm, nw, :prior, i) # gets the prior variable
+
+    
+    var_i = _PM.var(pm, nw, _PM.ref(pm, nw, :prior, i, "var_i"), cmp_id_i)[conn_i] #gets the var_i connections might be a problem
+    
+    var_j = _PM.var(pm, nw, _PM.ref(pm, nw, :prior, i, "var_j"), cmp_id_j)[conn_j] #gets the var_j connections might be a problem
+
+    π_i = _PM.ref(pm, nw, :prior, i, "π_i") # previous value of the variable i
+    π_j = _PM.ref(pm, nw, :prior, i, "π_j") # previous value of the variable j
+    a_ij= _PM.ref(pm, nw, :prior, i, "a_ij") 
+
+    rsc = _PM.ref(pm, nw, :se_settings)["rescaler"]
+    
+    JuMP.@constraint(pm.model,
+        prior[1]*a_ij*rsc^2 >= (π_i-var_i)*(π_j-var_j)
+    )
+    JuMP.@constraint(pm.model,
+        prior[1]*a_ij*rsc^2 >= - (π_i-var_i)*(π_j-var_j)
+    )
+
+
+
+  
+
+end
+
+
+
 
 # adaptation for se of _PMMCDC.constraint_kcl_shunt
 # the difference here is that load demand is a variable, not a parameter read from the dictionary
