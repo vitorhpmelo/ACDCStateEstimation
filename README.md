@@ -61,3 +61,21 @@ Running the scripts will generate the following files:
 - "stationary_MC5_wlav_errors.csv" 
 
 via the result in these files it is possible to generate Fig. 6.
+
+### Section D
+
+The scripts used to generate the results in this section are:
+
+- "examples/stationary_MC5_wlav_time_bench.jl"
+- "examples/stationary_MC5_wls_time_bench.jl"
+- "examples/stationary_MC118_wlav_time_bench.jl"
+- "examples/stationary_MC118_wls_time_bench.jl"
+
+Each script will run a monte carlo simulation and the resulting execution times will be avaible in the file:
+
+- "stationary_MC5_wls_conv.csv"
+- "stationary_MC5_wlav_conv.csv"
+- "stationary_MC118_wls_conv.csv"
+- "stationary_MC118_wlav_conv.csv"
+With the execution times, and convergence information.
+

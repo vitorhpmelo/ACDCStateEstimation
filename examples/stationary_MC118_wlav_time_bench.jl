@@ -73,7 +73,7 @@ reference=[69,119,120,121,122,123] #slack buses
 
 result, σ_dict, data_wls_sr = generate_data_basic_acdcse(data_pf, data_wls_sr, nlp_optimizer_pf,"all",reference, sample_error = false); # solves powerflow and generates7 SE data
 
-N=20
+N=100
 n0=1
 
 meas_set=CSV.read(joinpath(_ACDCSE.ACDCSE_dir(), "test/data/meas_set/meas_set_case118.csv"),DataFrame; stringtype=String);

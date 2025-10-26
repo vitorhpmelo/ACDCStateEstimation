@@ -73,7 +73,7 @@ reference=[1,6,11] #slack buses
 set_fixed_bus_voltages!(data_pf)
 result, σ_dict, data_wls_sr = generate_data_basic_acdcse(data_pf, data_wls_sr, nlp_optimizer_pf,"all", sample_error = false); # solves powerflow and generates7 SE data
 #%%
-N=10
+N=100
 n0=1
 
 meas_set=CSV.read(joinpath(_ACDCSE.ACDCSE_dir(), "test/data/meas_set/meas_set_case5.csv"),DataFrame; stringtype=String);
