@@ -1,4 +1,5 @@
-# Repository containing the data used in the paper "Bayesian Information Fusion for State Estimation in AC/DC Networks with Unbalanced HVDC Grids" subbmitted to the PSCC 2026
+# Repository containing paper results
+## paper "Bayesian Information Fusion for State Estimation in AC/DC Networks with Unbalanced HVDC Grids" subbmitted to the PSCC 2026 (under review)
 [![Build Status](https://github.com/MartaVanin/ACDCStateEstimation.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/MartaVanin/ACDCStateEstimation.jl/actions/workflows/CI.yml?query=branch%3Amaster)
 
 
