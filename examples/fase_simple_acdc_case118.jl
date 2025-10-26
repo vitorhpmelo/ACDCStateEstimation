@@ -70,7 +70,7 @@ ipopt_out=Dict("pmu"=>ipot_file_fase,"hyb"=>ipot_file_wls,"scada"=>ipot_file_sca
 
 reference=[69,119,120,121,122,123] #slack buses
 
-
+#%%
 #run pf and generate measurements
 result, σ_dict, data_wls_sr = generate_data_basic_acdcse(data_pf, data_wls_sr, nlp_optimizer_pf,"all",reference, sample_error = false);
 
