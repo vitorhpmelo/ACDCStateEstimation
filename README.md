@@ -4,28 +4,45 @@
 
 
 
-## Instructions:
+# Instructions:
 
-### Network data and measurement sets 
+## Network data and measurement sets 
 
 - The network data are avaible in the  sub-directory test/data/matacdc_scripts
 - The measurement sets employed for both test systems used in the paper are avaible in the folder test/data/meas_set
 
-### Paper results 
+## Paper results 
 
+### Section A
 The scripts used to generate of Section A can be reproduced by executing the following scripts  
 
 - "examples/stationary_MC5_wls.jl"
 - "examples/stationary_MC5_wlav.jl"
 
 Both scripts will execute 100 Monte Carlo simulations, in the "case5" test case, the first one emplying the WLS objective, and the second one the WLAV, for all formulations employed in the paper (Prior, Bay and Hyb). 
-The excution of both scripts will result in two files :
+The excution of both scripts will result in the files :
 
 - "stationary_MC5_wls_errors.csv"
 - "stationary_MC5_wlav_errors.csv" 
 
-These files contains the reference values for all state variables and the estimated values for these quantities in all simulations, by using these values it is possible to reproduce TAB. I, and Fig.6. 
+These files contains the reference values for all state variables and the estimated values for these quantities in all simulations, by using these values it is possible to reproduce TAB. I, and Fig.4. 
 
 Note: To generate Tab I was generated without considering DC SMU, these masurements need to be removed in  "test/data/meas_set/meas_set_case5.csv". 
 
+### Section B
+
+The script used to generate the results in section B is "examples/time_series_simul_case118.jl", this script will execute a time series for the methods tested in the paper (Prior, Bay and Hyb). Note that the time series is repeated 100 times in the Monte Carlo simulation. 
+
+Note: This execution can take time!!! 
+
+The measurement residuals objective is defined in the line 67 of the script 
+
+-obj="rwls" executes the Weighted Least Squares
+-obj="rwlav" executes the Weighted Least Absolute Values
+
+The excution of both scripts will result in the files:
+
+df_errors_total_time_series_simul_case118_{obj}.csv
+
+With the results in this file, the Fig. 5 can be generated.
 

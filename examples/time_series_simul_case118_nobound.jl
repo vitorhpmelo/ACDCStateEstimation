@@ -64,7 +64,7 @@ nlp_optimizer_scada = _PMMCDC.optimizer_with_attributes(
 min_sigma = 1e-5
 
 a=1e-4
-obj="rwls" #objective function for state estimation
+obj="rwls" #defines the objective function used in the simulation (rwls = Weighted Least Squares , rwlav Weighted Least Absolute Values)
 name_simulation = "time_series_simul_case118_$obj"
 
 data_wls_sr = _ACDCSE.quickget_case118_paper() #loads network data
@@ -136,7 +136,7 @@ meas_set=CSV.read(joinpath(_ACDCSE.ACDCSE_dir(), "test/data/meas_set/meas_set_ca
 
 
 
-N=20
+N=100
 n0=1
 
 sampling_scada=2000 #in ms
