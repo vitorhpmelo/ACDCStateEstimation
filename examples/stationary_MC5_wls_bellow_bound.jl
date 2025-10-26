@@ -61,6 +61,7 @@ nlp_optimizer_scada = _PMMCDC.optimizer_with_attributes(
 min_sigma = 1e-5
 
 name_experiment="stationary_MC5_wls"
+bound=0.5
 
 data_wls_sr = _ACDCSE.quickget_case5_paper() #loads network data
 data_pf = _ACDCSE.quickget_case5_paper() #loads network data
@@ -73,7 +74,7 @@ reference=[1,6,11] #slack buses
 set_fixed_bus_voltages!(data_pf)
 result, σ_dict, data_wls_sr = generate_data_basic_acdcse(data_pf, data_wls_sr, nlp_optimizer_pf,"all", sample_error = false); # solves powerflow and generates7 SE data
 
-N=10
+N=100
 n0=1
 
 meas_set=CSV.read(joinpath(_ACDCSE.ACDCSE_dir(), "test/data/meas_set/meas_set_case5.csv"),DataFrame; stringtype=String);
@@ -83,7 +84,7 @@ d_meas_set=create_dmeas_set(meas_set,data_pf)
 d_keys,d_prec=filtermeas_set!(data_wls_sr,d_meas_set,sample_error=false,min_sig=min_sigma)
 
 
-ipot_out=Dict("pmu"=>ipot_file_fase,"hyb"=>ipot_file_wls,"scada"=>ipot_file_scada)
+ipopt_out=Dict("pmu"=>ipot_file_fase,"hyb"=>ipot_file_wls,"scada"=>ipot_file_scada)
 se_objective=Dict("scada"=>"rwls","pmu"=>"rwls" ,"hyb"=>"rwls")
 
 
@@ -92,11 +93,11 @@ dfs_errors = DataFrame[]
 dfs_conv = DataFrame[]
 dfs_priors = DataFrame[]
 
-
-set_converter_constraints!(data_wls_sr; Pmax_factor=2.0,Pmin_factor=2.0, Vmax_factor=1.3,Vmin_factor=0.7)
+set_converter_constraints!(data_wls_sr; Pmax_factor=2.0,Pmin_factor=2.0, Vmax_factor=1.3,Vmin_factor=0.7);
+data_wls_sr["convdc"]["3"]["Pmax"] = [bound]
 #%%
 for a in [1e-4]
-    df_errors, df_conv,df_prior = run_fase_experiment_stationary(N, n0, a, min_sigma, result, data_wls_sr, d_prec, d_keys, d_meas_set, nlp_optimizer_hyb, nlp_optimizer_scada, nlp_optimizer_pmu, ipot_out;cutoff=1e0,se_objective=se_objective)
+    df_errors, df_conv,df_prior = run_fase_experiment_stationary(N, n0, a, min_sigma, result, data_wls_sr, d_prec, d_keys, d_meas_set, nlp_optimizer_hyb, nlp_optimizer_scada, nlp_optimizer_pmu, ipopt_out;cutoff=1e0,se_objective=se_objective)
     df_errors[!, :a] .= a
     df_conv[!, :a] .= a
     push!(dfs_errors, df_errors)
@@ -112,4 +113,3 @@ df_priors_all = vcat(dfs_priors...)
 CSV.write("$(name_experiment)_priors.csv", df_priors_all)
 CSV.write("$(name_experiment)_errors.csv", df_errors_all)
 CSV.write("$(name_experiment)_conv.csv", df_conv_all)
-#%%

@@ -46,3 +46,18 @@ df_errors_total_time_series_simul_case118_{obj}.csv
 
 With the results in this file, the Fig. 5 can be generated.
 
+### Section C
+
+The scripts used to generate the results in this section are:
+
+- "examples/stationary_MC5_wlav_bellow_bound.jl"
+- "examples/stationary_MC5_wlav_bellow_bound.jl"
+
+The script is similar to the ones used in Section A, to obtain the results in Fig. 6. The value of the bound used to the Pmax of the Conv 3 is altered in line 64 of the script. The scripts have to be runned for each different bound value.
+
+Running the scripts will generate the following files:  
+
+- "stationary_MC5_wls_errors.csv"
+- "stationary_MC5_wlav_errors.csv" 
+
+via the result in these files it is possible to generate Fig. 6.
