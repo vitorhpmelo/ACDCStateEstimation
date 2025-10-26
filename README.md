@@ -77,5 +77,5 @@ Each script will run a monte carlo simulation and the resulting execution times 
 - "stationary_MC5_wlav_conv.csv"
 - "stationary_MC118_wls_conv.csv"
 - "stationary_MC118_wlav_conv.csv"
-With the execution times, and convergence information.
+With the execution times, and convergence information. The content of these files can be used to generate Table IV. Note that this table depends on the computer used. 
 
