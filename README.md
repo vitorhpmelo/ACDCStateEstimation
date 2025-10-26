@@ -15,7 +15,7 @@
 
 The scripts used to generate of Section A can be reproduced by executing the following scripts  
     - examples/stationary_MC5_wls.jl
-    -- examples/stationary_MC5_wlav.jl
+    - examples/stationary_MC5_wlav.jl
 Both scripts will execute Monte Carlo simulations, in the "case5" test case, the first one emplying the WLS objective, and the second one the WLAV, for all formulations employed in the paper (Prior, Bay and Hyb). 
 The excution of both scripts will result in two files :"stationary_MC5_wls_errors.csv" and "stationary_MC5_wlav_errors.csv". These files contains the reference values for all state variables and the estimated values for these quantities in all simulations, by using these values it is possible to reproduce TAB. I, and Fig.6. 
 \\
