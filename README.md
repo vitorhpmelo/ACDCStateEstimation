@@ -9,7 +9,7 @@
 ## Network data and measurement sets 
 
 - The network data are avaible in the  sub-directory test/data/matacdc_scripts
-- The measurement sets employed for both test systems used in the paper are avaible in the folder test/data/meas_set. The folder also contains a file explaining the measurement sets files
+- The measurement sets employed for both test systems used in the paper are avaible in the folder test/data/meas_set. The folder also contains a file explaining the measurement sets files.
 
 ## Paper results 
 
