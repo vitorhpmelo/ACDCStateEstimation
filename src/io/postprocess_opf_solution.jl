@@ -4,6 +4,10 @@ Adds the dc power values to a PMMCDC (o)pf result dictionary
 bus connection of the dc branch
 """
 function get_dc_power!(sol::Dict, data::Dict)
+    if length(data["branchdc"])==0
+        @warn "DC branches dictionary exists but it is empty."
+        return
+    end
     for (br, dcbranch) in sol["solution"]["branchdc"]
         bf = data["branchdc"][br]["fbusdc"]
         bt = data["branchdc"][br]["tbusdc"]
@@ -28,7 +32,11 @@ end
 function get_ac_currents!(sol::Dict, data::Dict)
 
     j=complex(0,1)
-
+    if length(data["branch"])==0
+        @warn "AC branches dictionary exists but it is empty."
+        return
+    end
+    
     for (br, branch) in sol["solution"]["branch"]
         bf = data["branch"][br]["f_bus"]
         bt = data["branch"][br]["t_bus"]
@@ -60,6 +68,10 @@ end
 
 function get_convacdc_m!(sol::Dict, data::Dict)
 
+    if length(data["convdc"])==0
+        @warn "converters dictionary exists but it is empty."
+        return
+    end
     for (key, conv) in sol["solution"]["convdc"]
         bus_dc = data["convdc"][key]["busdc_i"]
         conv_confi = data["convdc"][key]["conv_confi"]

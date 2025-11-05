@@ -28,8 +28,8 @@ end
 function set_fixed_bus_voltages!(data_pf)
     for (k, bus) in data_pf["bus"]
         if bus["bus_type"] != 1
-            bus["vmax"] = bus["vm"]*1.01
-            bus["vmin"] = bus["vm"]*0.99
+            bus["vmax"] = bus["vm"]*1.001
+            bus["vmin"] = bus["vm"]*0.999
         end
     end
 end
@@ -44,7 +44,7 @@ function set_fixed_bus_conv_voltages!(data_pf)
     end
 end
 
-function set_fixed_gen_pg(data_pf)
+function set_fixed_gen_pg!(data_pf)
     for (k, gen) in data_pf["gen"]
         bus=gen["gen_bus"]
         if data_pf["bus"]["$bus"]["bus_type"] == 2

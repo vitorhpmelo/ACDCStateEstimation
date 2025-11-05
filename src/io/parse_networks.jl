@@ -61,3 +61,6 @@ quickget_case3120() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacd
 
 quickget_case118() = _PMMCDC.parse_file(joinpath(_PMMCDC_dir, "test/data/matacdc_scripts/case118_mcdc.m"))
 quickget_case118_paper() = _PMMCDC.parse_file(joinpath(ACDCSE_dir(), "test/data/matacdc_scripts/case118_mcdc.m"))
+
+
+quickget_cigre_B4() = _PMMCDC.parse_file(joinpath(ACDCSE_dir(), "test/data/matacdc_scripts/cigre_B4.m"))

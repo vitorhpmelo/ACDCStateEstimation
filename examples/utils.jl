@@ -106,11 +106,6 @@ function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer,reference::V
     #_ACDCSE.add_current_flows_to_se_result!(result)
 
 
-    # _ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = sample_error, measurements = ["vm", "va", "p_to", "q_to", "vdcm", "pg", 
-                                # "pd", "qg", "qd","i_dcgrid_to","i_dcgrid_fr","cm_fr"])#, "p_dc_to", "p_dc_fr"])
-
-    # _ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = sample_error, measurements = ["vm", "va", "p_to", "q_to","p_fr","q_fr",  "pg", 
-                                # "pd", "qg", "qd","cr_fr","cr_to","ci_fr","ci_to"])#, "p_dc_to", "p_dc_fr"])
     _ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = sample_error, measurements = measurements)#, "p_dc_to", "p_dc_fr"])
 # 
     _ACDCSE.prepare_data_for_se_default!(data_se, exceptions = reference) #transforms all PV buses in PQ , and remove slack buses
@@ -168,6 +163,9 @@ function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer, meas_types;
     elseif meas_types == "ac_only"
         measurements = ["vm", "va", "p_to", "q_to","p_fr","q_fr",  "pg", 
                         "pd", "qg", "qd","cr_fr","cr_to","ci_fr","ci_to"]
+    elseif meas_types == "no_branch"
+        measurements = ["vm", "va", "vdcm", "pg", 
+                                "pd", "qg", "qd","mconv","pconv","qconv","vmconv","ppr_fr","qpr_fr","vmfilt","pgrid","qgrid","ptf_to","qtf_to","pdc","p_dc_fr","p_dc_to","i_dcgrid_to","i_dcgrid_fr","pdc"]
     else
         error("Unknown measurement type: $meas_types")
     end
@@ -228,6 +226,9 @@ function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer, meas_types,
     elseif meas_types == "ac_only"
         measurements = ["vm", "va", "p_to", "q_to","p_fr","q_fr",  "pg", 
                         "pd", "qg", "qd","cr_fr","cr_to","ci_fr","ci_to"]
+    elseif meas_types == "no_branch"
+        measurements = ["vm", "va", "vdcm", "pg", 
+                                "pd", "qg", "qd","mconv","pconv","qconv","vmconv","ppr_fr","qpr_fr","vmfilt","pgrid","qgrid","ptf_to","qtf_to","pdc","p_dc_fr","p_dc_to","i_dcgrid_to","i_dcgrid_fr","pdc"]
     else
         error("Unknown measurement type: $meas_types")
     end
