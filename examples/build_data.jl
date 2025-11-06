@@ -802,6 +802,47 @@ function create_W_autodiff_eg(network_info)
     return diagm(σ.^(-2))
 end
 
+function create_W_autodiff_eg_no_virtual(network_info)
+    N_z=length(network_info["z"])
+    haskey(network_info,"z_virtual") ? N_zv=length(network_info["z_virtual"]) : N_zv=0
+    haskey(network_info,"g") ? N_g=length(network_info["g"]) : N_g=0
+    N_gPinj=0
+    N_gQinj=0
+    N=N_z+N_zv+N_g
+
+    σ = Vector{Float64}(undef, N)
+    
+    
+    for i in 1:N_z
+        σ[i] = network_info["z"][i].σ
+    end
+    if N_zv > 0
+        for i in 1:N_zv
+            σ[i + N_z] = network_info["z_virtual"][i].σ
+        end
+    end
+    if N_g > 0
+        for i in 1:N_g
+            σ[i + N_z + N_zv] = network_info["g"][i].σ
+        end
+    end
+    if N_gPinj > 0
+        for i in 1:N_gPinj
+            σ[i + N_z + N_zv + N_g] = network_info["g_Pinj"][i].σ
+        end
+    end
+    if N_gQinj > 0
+        for i in 1:N_gQinj
+            σ[i + N_z + N_zv + N_g + N_gPinj] = network_info["g_Qinj"][i].σ
+        end
+    end 
+        
+    network_info["σ"] = σ
+    return diagm(σ.^(-2))
+end
+
+
+
 function determine_virtual_buses(data)
     load_buses = Int64[]
     for (key, load) in data["load"]

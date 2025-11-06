@@ -348,122 +348,6 @@ end
 function generate_res_cov_QR!(result,data,d_keys;min_sig::Float64=1e-4,print_info=false,error_res::Float64=1e-12)
 
 
-    network_info = build_network_info(data, result)
-    weight_z_autodiffse!(network_info, d_keys; min_sig=min_sig )
-
-    x_info=network_info["x_info"] 
-    x=network_info["x"]
-
-    network_info["f_h"]=create_h(network_info)
-    
-    
-    network_info["f_g"]=create_g(network_info)
-
-    
-    # network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_hv"], network_info["f_g"])
-    network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_g"])
-    network_info["W"]=create_W_autodiff(network_info)
-
-  
-
-    print_info && print_network_info(network_info)
-
-
-    if "H" in keys(network_info)
-        Gain,H=update_gain!(network_info)
-    else
-        Gain,H=compute_gain(network_info["f_ht"], x, network_info["W"])
-        network_info["H"] = H
-    end
-
-    W=network_info["W"]
-    Whalf=diagm(sqrt.(diag(W)))
-    Q,R = qr(Whalf*H )
-    Q= Matrix(Q)
-    R= Matrix(R)
-    Ω= inv(network_info["W"]) - H * inv(R)*inv(R') * H'   
-
-
-    
-    z = [z.z for z in network_info["z"]]
-    g = [0 for g in network_info["g"]]
-    z_total = vcat(z, g)
-    hx = h_vec(x, network_info["f_ht"])
-
-
-    r = abs.(z_total - hx)
-    rn=Vector{Float64}(undef,length(r))
-
-    for i in 1:length(r)
-        Ω[i,i] < error_res ? rn[i]=0.0 : rn[i]=r[i]/sqrt(Ω[i,i])
-    end
-    return Ω,r,W
-
-
-end
-
-
-
-
-function generate_res_cov!(result,data,d_keys;min_sig::Float64=1e-4,print_info=false,error_res::Float64=1e-12)
-
-
-    network_info = build_network_info(data, result)
-    weight_z_autodiffse!(network_info, d_keys; min_sig=min_sig )
-
-    x_info=network_info["x_info"] 
-    x=network_info["x"]
-
-    network_info["f_h"]=create_h(network_info)
-    
-    
-    network_info["f_g"]=create_g(network_info)
-
-    
-    # network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_hv"], network_info["f_g"])
-    network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_g"])
-    network_info["W"]=create_W_autodiff(network_info)
-
-  
-
-    print_info && print_network_info(network_info)
-
-
-    if "H" in keys(network_info)
-        Gain,H=update_gain!(network_info)
-        network_info["H"] = H
-    else
-        Gain,H=compute_gain(network_info["f_ht"], x, network_info["W"])
-        network_info["H"] = H
-    end
-
-    W=network_info["W"]
-    H=network_info["H"]
-
-
-    Ginv=inv(Gain)
-    
-    Ω= inv(W) - H * Ginv * H'
-    
-    z = [z.z for z in network_info["z"]]
-    g = [0 for g in network_info["g"]]
-    z_total = vcat(z, g)
-    hx = h_vec(x, network_info["f_ht"])
-
-
-    r = abs.(z_total - hx)
-    rn=Vector{Float64}(undef,length(r))
-
-
-    return Ω,r,W,Gain,network_info
-
-end
-
-
-
-function generate_res_cov_new!(result,data,d_keys;min_sig::Float64=1e-4,print_info=false,error_res::Float64=1e-12)
-
-
     network_info = build_network_info_bad_data(data, result)
     weight_z_autodiffse!(network_info, d_keys; min_sig=min_sig )
 
@@ -476,7 +360,6 @@ function generate_res_cov_new!(result,data,d_keys;min_sig::Float64=1e-4,print_in
 
     network_info["f_g_Pinj"]=create_g_Pinj(network_info)
     network_info["f_c_Qinj"]=create_g_Qinj(network_info)
-    network_info["f_c_Qinj"][3](x)
 
     network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_g"], network_info["f_g_Pinj"], network_info["f_c_Qinj"])
 
@@ -510,6 +393,54 @@ function generate_res_cov_new!(result,data,d_keys;min_sig::Float64=1e-4,print_in
 
 end
 
+
+function generate_res_cov_QR_no_virtual!(result,data,d_keys;min_sig::Float64=1e-4,print_info=false,error_res::Float64=1e-12)
+
+
+    network_info = build_network_info_bad_data(data, result)
+    weight_z_autodiffse!(network_info, d_keys; min_sig=min_sig )
+
+    x_info=network_info["x_info"] 
+    x=network_info["x"]
+
+    network_info["f_h"]=create_h(network_info)
+        
+    network_info["f_g"]=create_g(network_info)
+
+    # network_info["f_g_Pinj"]=create_g_Pinj(network_info)
+    # network_info["f_c_Qinj"]=create_g_Qinj(network_info)
+
+    network_info["f_ht"] = vcat(network_info["f_h"], network_info["f_g"])
+
+    network_info["W"]=create_W_autodiff_eg_no_virtual(network_info)
+
+    Gain,H=compute_gain(network_info["f_ht"], x, network_info["W"])
+
+    # Ginv=inv(Gain)
+        
+    # Ω= inv(network_info["W"]) - H * Ginv * H'
+
+    W=network_info["W"]
+    Whalf=diagm(sqrt.(diag(W)))
+    Q,R = qr(Whalf*H )
+    Q= Matrix(Q)
+    R= Matrix(R)
+    Ω= inv(network_info["W"]) - H * inv(R)*inv(R') * H'   
+
+    z = [z.z for z in network_info["z"]]
+    g = [0 for g in network_info["g"]]
+    g_Pinj = [0 for g in network_info["g_Pinj"]]
+    g_Qinj = [0 for g in network_info["g_Qinj"]]
+    z_total = vcat(z, g)
+    hx = h_vec(x, network_info["f_ht"])
+
+    hx = h_vec(x, network_info["f_ht"])
+
+    r = abs.(z_total - hx)
+
+    return Ω,r,network_info["W"],Gain,network_info
+
+end
 
 
 

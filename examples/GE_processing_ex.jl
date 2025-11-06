@@ -30,8 +30,6 @@ include("simulation_functions.jl")
 
 
 
-JuMP._CONSTRAINT_LIMIT_FOR_PRINTING[] = 1000000
-
 
 
 nlp_optimizer_pf = _PMMCDC.optimizer_with_attributes(
@@ -40,21 +38,13 @@ nlp_optimizer_pf = _PMMCDC.optimizer_with_attributes(
 
 
 
-ipot_file_fase="ipopt_fase.out"
+
 ipot_file_wls="ipopt_wls.out"
-ipot_file_scada="ipopt_scada.out"
-
-nlp_optimizer_pmu = _PMMCDC.optimizer_with_attributes(
-    Ipopt.Optimizer, "tol" => 1e-5, "print_level" => 5,  "sb" => "yes", "max_iter" => 10000, "output_file" => ipot_file_fase
-)
 
 
-nlp_optimizer_hyb = _PMMCDC.optimizer_with_attributes(
-    Ipopt.Optimizer, "tol" => 1e-5, "print_level" => 5, "sb" => "yes", "max_iter" => 20000, "output_file" => ipot_file_wls
-)
 
 nlp_optimizer_scada = _PMMCDC.optimizer_with_attributes(
-    Ipopt.Optimizer, "tol" => 1e-5, "print_level" => 5, "sb" => "yes", "max_iter" => 10000, "output_file" => ipot_file_scada
+    Ipopt.Optimizer, "tol" => 1e-5, "print_level" => 5, "sb" => "yes", "max_iter" => 10000
 )
 
 
@@ -67,7 +57,6 @@ data_wls_sr = _ACDCSE.quickget_case5alt() #loads network data
 data_pf = _ACDCSE.quickget_case5alt() #loads network data
 
 
-ipopt_out=Dict("pmu"=>ipot_file_fase,"hyb"=>ipot_file_wls,"scada"=>ipot_file_scada)
 
 reference=[1,6,11] #slack buses
 
@@ -78,31 +67,16 @@ result, σ_dict, data_wls_sr = generate_data_basic_acdcse(data_pf, data_wls_sr, 
 
 
 
-d_conv_scada = Dict(
-    "termination_status" => "any string"
-)
 
-d_conv_pmu = Dict(
-    "termination_status" => "any string"
-)
-
-d_conv_hyb = Dict(
-    "termination_status" => "any string"
-)
-
-df_errors_total = DataFrame()
-
-
-
-meas_set=CSV.read("meas_set_case5.csv",DataFrame; stringtype=String);
+meas_set=CSV.read(joinpath(_ACDCSE.ACDCSE_dir(), "test/data/meas_set/meas_set_case5.csv"),DataFrame; stringtype=String);
 d_meas_set=create_dmeas_set(meas_set,data_pf)
 
 
 #filter measurement set
 d_keys,d_prec=filtermeas_set!(data_wls_sr,d_meas_set,sample_error=false,min_sig=min_sigma)
 
-ipopt_out=Dict("pmu"=>ipot_file_fase,"hyb"=>ipot_file_wls,"scada"=>ipot_file_scada)
-se_objective=Dict("scada"=>"rwls","pmu"=>"rwls" ,"hyb"=>"rwls")
+
+
 
 scada_measurements = ["scada", "dc", "conv"]
 d_meas_set_scada = Dict()
@@ -120,59 +94,30 @@ end
 
 
 #generate data for fase, wls and scada
+
+
 data_hyb = deepcopy(data_wls_sr) #copy data to avoid modifying original data
-
-
 introduce_noise!(data_hyb, d_prec, d_keys, seed=n, min_sig=min_sigma, bound=true, bound_factor=2) #introduce noise to measurements
-data_pmu = deepcopy(data_hyb)
 data_scada = deepcopy(data_hyb)
 
 
 
 split_meas_set!(d_keys, data_scada, ["scada", "dc", "conv"])
-split_meas_set!(d_keys, data_pmu, ["pmu", "dtu"]) #splits the measurements into SCADA and PMU sets;
-
-data_scada["se_settings"]["criterion"] = se_objective["scada"]
-
-set_converter_constraints!(data_scada, Pmax_factor=2.0, Pmin_factor=2.0, Vmax_factor=1.3, Vmin_factor=0.7)
-μ_original = data_scada["meas"]["192"]["dst"][2].μ
-σ_original = data_scada["meas"]["192"]["dst"][2].σ
-μ_eg=μ_original+10*σ_original
-σ_eg=abs(μ_eg)*0.02/3
-data_scada["meas"]["192"]["dst"][2]=_ACDCSE._DST.Normal(μ_eg, σ_eg)
 
 
 #set a very low error for the DC current measurement to avoid numerical issues
 se_res_scada = _ACDCSE.solve_acdcse(data_scada, _PM.ACPPowerModel, nlp_optimizer_scada) #Solve SE
-df_error_scada = df_error_var(result, se_res_scada)
-df_error_scada[!, :se] .= "scada"
-df_error_scada[!, :n] .= n
-
-#%%
-
-
-
-#%%
 
 
 # net_posterior = generate_data_posterior_cov!(se_res_pmu, data_pmu,d_keys)
 
-Ω_1,r_1,W_1,G1,network_info_1 = generate_res_cov_new!(se_res_scada, data_scada, d_keys,min_sig=1e-5,print_info=true)
+Ω_1,r_1,W_1,G1,network_info_1 = generate_res_cov_QR!(se_res_scada, data_scada, d_keys,min_sig=1e-5,print_info=true)
 
 
-Ω_2,r_2,W_2,G2,network_info_2 = generate_res_cov_new!(se_res_scada, data_scada, d_keys,min_sig=1e-8,print_info=true)
 # Ωqr,rqr,Wqr= generate_res_cov_QR!(se_res_scada, data_scada, d_keys;min_sig=1e-4,print_info=true)
 
 
 
-rn_2= similar(r_2)
-for (i,r_i) in enumerate(r_2)
-    if Ω_2[i,i] < 1e-10
-        rn_2[i]=0.0
-    else
-        rn_2[i]=r_i/sqrt(Ω_2[i,i])
-    end
-end
 
 
 rn_1= similar(r_1)
@@ -190,22 +135,50 @@ end
 
 max_rn_1, idx_rn_1 = findmax(rn_1)
 println("Maximum value of rn_1: ", max_rn_1, " at index ", idx_rn_1)
+# find second highest distinct value and its index
+if length(rn_1) < 2
+    println("Array too short to find a second highest value.")
+else
+    sorted_idx = sortperm(rn_1, rev=true)  # indices sorted by value desc
+    first_idx = sorted_idx[1]
+    first_val = rn_1[first_idx]
 
-max_rn_2, idx_rn_2 = findmax(rn_2)
-println("Maximum value of rn_2: ", max_rn_2, " at index ", idx_rn_2)
+    second_idx = nothing
+    second_val = nothing
+    for idx in Iterators.drop(sorted_idx, 1)
+        if rn_1[idx] != first_val
+            second_idx = idx
+            second_val = rn_1[idx]
+            break
+        end
+    end
 
+    if second_idx === nothing
+        println("No second distinct maximum found; all values equal to ", first_val)
+    else
+        println("Second highest value of rn_1: ", second_val, " at index ", second_idx)
+    end
+end
+
+# plot rn_1 and mark the maximum
+inds = collect(1:length(rn_1))
+p = plt.plot(inds, rn_1, label="rn_1", lw=2)
+plt.scatter!(p, [idx_rn_1], [max_rn_1], color=:red, label="max", ms=6)
+plt.xlabel!(p, "Measurement index")
+plt.ylabel!(p, "Normalized residual (rn_1)")
+plt.title!(p, "Normalized residuals rn_1")
+display(p)
 
 
 d_1 = abs.(diag(Ω_1))
 d_1 = filter(!=(0.0), d_1)
 log10d_1 = log10.(d_1)
 
-d_2 = abs.(diag(Ω_2))
-d_2 = filter(!=(0.0), d_2)
-log10d_2 = log10.(d_2)
+
+
+
 
 plt.plot(log10d_1, label="log10(|diag(Ω_1)|)")
-plt.plot!(log10d_2, label="log10(|diag(Ω_2)|)")
 plt.xlabel!("Index")
 plt.ylabel!("Value")
 plt.title!("Absolute Values of diag(Ω)")
@@ -213,7 +186,7 @@ plt.title!("Absolute Values of diag(Ω)")
 
 
 
-max_val, max_idx = findmax(rn)
+xxmax_val, max_idx = findmax(rn)
 
 
 sqrt(W[50,50])
