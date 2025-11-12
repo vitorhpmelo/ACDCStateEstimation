@@ -239,7 +239,7 @@ function no_conversion_needed(pm::_PM.AbstractACPModel, msr_var::Symbol, cmp_typ
     return msr_var ∈ [:i_dcgrid]
   elseif cmp_type == :convdc
     #error("dc converter support not added yet!")
-    return msr_var ∈ [:pconv_ac,:qconv_ac,:vmc,:pconv_pr_fr,:qconv_pr_fr,:vmf,:qconv_tf_to,:pconv_tf_to,:pconv_tf_fr,:qconv_tf_fr,:pconv_dc,:pconv_dcg,:pconv_dcg_shunt]#finish
+    return msr_var ∈ [:pconv_ac,:qconv_ac,:vmc,:vac,:pconv_pr_fr,:qconv_pr_fr,:vmf,:vaf,:qconv_tf_to,:pconv_tf_to,:pconv_tf_fr,:qconv_tf_fr,:pconv_dc,:pconv_dcg,:pconv_dcg_shunt]#finish
   elseif cmp_type == :busdc
     return msr_var ∈ [:vdcm]
   else

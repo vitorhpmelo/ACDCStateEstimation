@@ -34,6 +34,21 @@ function set_fixed_bus_voltages!(data_pf)
     end
 end
 
+function set_fixed_busdc_voltages!(data_pf)
+    relax=0.01
+    p=1.0+relax
+    n=1.0-relax
+    for (k, conv) in data_pf["convdc"]
+        if conv["type_dc"] == 2
+            key_busdc=conv["busdc_i"]
+            vset=data_pf["busdc"]["$key_busdc"]["Vdc"]
+            data_pf["busdc"]["$key_busdc"]["Vdcmax"] = [vset[1],vset[2],0.1]
+            data_pf["busdc"]["$key_busdc"]["Vdcmin"] = [vset[1],vset[2],-0.1]
+        end
+    end
+end
+
+
 function set_fixed_bus_conv_voltages!(data_pf)
     for (k, conv) in data_pf["convdc"]
         if conv["type_ac"] != 1
@@ -50,6 +65,18 @@ function set_fixed_gen_pg!(data_pf)
         if data_pf["bus"]["$bus"]["bus_type"] == 2
             gen["pmax"] = gen["pg"]
             gen["pmin"] = gen["pg"]
+        end
+    end
+end
+
+function set_fixed_gen_pg_wind!(data_pf,buslist=[])
+    for bus in buslist
+        for (key, gen) in data_pf["gen"]
+            if gen["gen_bus"]==bus
+                pg= gen["pg"]
+                gen["pmax"] = pg
+                gen["pmin"] = pg
+            end
         end
     end
 end
@@ -160,6 +187,19 @@ function determine_loads_to_modify(bus2mod,data_pf)
         end
     end
     return load2mod
+end
+
+
+
+function determine_gens_to_modify(bus2mod,data_pf)
+    gens=keys(data_pf["gen"])
+    gens2mod=[]
+    for gen in gens
+        if data_pf["gen"][gen]["gen_bus"] in bus2mod
+            push!(gens2mod, gen)
+        end
+    end
+    return gens2mod
 end
 
 function create_se_data!(data_pf_all, data_se_all, results, nlp_optimizer,reference;wind_gen=[],wind_gen_var=0.0)
