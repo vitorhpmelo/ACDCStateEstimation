@@ -81,6 +81,25 @@ function set_fixed_gen_pg_wind!(data_pf,buslist=[])
     end
 end
 
+function set_fixed_gen_pg_wind_conv!(data_pf,buslist=[])
+    d_Pgen=Dict()
+    for bus in buslist
+        d_Pgen[bus]=0.0
+        for (_,gen) in data_pf["gen"]
+            if gen["gen_bus"]==bus
+                d_Pgen[bus]= gen["pg"]
+            end
+        end
+        
+        for (_, conv) in data_pf["convdc"]
+            if conv["busac_i"]==bus        
+                conv["Pacmax"] = [d_Pgen[bus]/2,d_Pgen[bus]/2]
+                conv["Pacmin"] = [d_Pgen[bus]/2,d_Pgen[bus]/2]
+            end
+        end
+    end
+end
+
 function set_fixed_gen_pg_result(data_pf,result)
     for (k, gen) in data_pf["gen"]
         bus=gen["gen_bus"]

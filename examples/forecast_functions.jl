@@ -31,7 +31,7 @@ function modify_gen_fp(time_steps,gen_data,data_pf,data_pfs,data_se,data_ses)
 end
 
 
-function create_vm!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vm!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["bus"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -42,8 +42,8 @@ function create_vm!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float
         m["var"]    = :vm
         μ = res_t["solution"]["bus"][key]["vm"]
         σ = prec * μ / 3
-        if σ < perc_virtual
-            σ = perc_virtual
+        if σ < prec_virtual
+            σ = prec_virtual
         end
         m["dst"]    = [_ACDCSE._DST.Normal(μ, σ)]
         n += 1
@@ -51,7 +51,7 @@ function create_vm!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float
 
 end
 
-function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n = length(data["meas"])+1
     for (key, _) in data["bus"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -62,8 +62,8 @@ function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float
         m["var"]    = :va
         μ = res_t["solution"]["bus"][key]["va"]
         σ = prec * μ / 3
-        if σ < perc_virtual
-            σ = perc_virtual
+        if σ < prec_virtual
+            σ = prec_virtual
         end
         m["dst"]    = [_ACDCSE._DST.Normal(μ, σ)]
         n += 1
@@ -76,7 +76,7 @@ end
 
 
 
-function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n = length(data["meas"])+1
     for (key, _) in data["bus"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -87,8 +87,8 @@ function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float
         m["var"]    = :va
         μ = res_t["solution"]["bus"][key]["va"]
         σ = prec * μ / 3
-        if σ < perc_virtual
-            σ = perc_virtual
+        if σ < prec_virtual
+            σ = prec_virtual
         end
         m["dst"]    = [_ACDCSE._DST.Normal(μ, σ)]
         n += 1
@@ -96,7 +96,7 @@ function create_va!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float
 end
 
 
-function create_vmf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vmf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["convdc"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -109,8 +109,8 @@ function create_vmf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
         σ_s = Float64[]
         for μ in μ_s
             σ = prec * μ / 3
-            if σ < perc_virtual
-                σ = perc_virtual
+            if σ < prec_virtual
+                σ = prec_virtual
             end
             push!(σ_s, σ)
         end
@@ -119,7 +119,7 @@ function create_vmf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
     end
 end
 
-function create_vaf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vaf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["convdc"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -132,8 +132,8 @@ function create_vaf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
         σ_s = Float64[]
         for μ in μ_s
             σ = prec * μ / 3
-            if σ < perc_virtual
-                σ = perc_virtual
+            if σ < prec_virtual
+                σ = prec_virtual
             end
             push!(σ_s, σ)
         end
@@ -142,7 +142,7 @@ function create_vaf!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
     end
 end
 
-function create_vmc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vmc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["convdc"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -155,8 +155,8 @@ function create_vmc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
         σ_s = Float64[]
         for μ in μ_s
             σ = prec * μ / 3
-            if σ < perc_virtual
-                σ = perc_virtual
+            if σ < prec_virtual
+                σ = prec_virtual
             end
             push!(σ_s, σ)
         end
@@ -165,7 +165,7 @@ function create_vmc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
     end
 end
 
-function create_vac!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vac!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["convdc"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -178,8 +178,8 @@ function create_vac!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
         σ_s = Float64[]
         for μ in μ_s
             σ = prec * μ / 3
-            if σ < perc_virtual
-                σ = perc_virtual
+            if σ < prec_virtual
+                σ = prec_virtual
             end
             push!(σ_s, σ)
         end
@@ -189,7 +189,7 @@ function create_vac!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Floa
 end
 
 
-function create_vmdc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, perc_virtual::Float64=1e-5)
+function create_vmdc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
     n=length(data["meas"])+1
     for (key, _) in data["busdc"]
         data["meas"][string(n)] = Dict{String,Any}()
@@ -202,12 +202,77 @@ function create_vmdc!(data::Dict{String,Any}, res_t::Dict{String,Any}; prec::Flo
         σ_s = Float64[]
         for μ in μ_s
             σ = prec * μ / 3
-            if σ < perc_virtual
-                σ = perc_virtual
+            if σ < prec_virtual
+                σ = prec_virtual
             end
             push!(σ_s, σ)
         end
         m["dst"]    = [_ACDCSE._DST.Normal(μ, σ) for (μ, σ) in zip(μ_s, σ_s)]
         n += 1
+    end
+end
+
+
+
+
+
+
+
+
+
+function create_vm!(data::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
+
+
+    for (k, conv) in data["bus"]
+        if conv["type_ac"] == 2
+            n=length(data["meas"])+1
+            data["meas"][string(n)] = Dict{String,Any}()
+            m = data["meas"][string(n)]
+            m["crit"]   = "rwls"
+            bus_ac=conv["busac_i"]
+            m["cmp_id"] =  bus_ac
+            m["cmp"]    = :bus
+            m["var"]    = :vm
+            μ_s = data["bus"][string(bus_ac)]["vm"]
+            σ_s = Float64[]
+            for μ in μ_s
+                σ = prec * μ / 3
+                if σ < prec_virtual
+                    σ = prec_virtual
+                end
+                push!(σ_s, σ)
+            end
+            m["dst"]    = [_ACDCSE._DST.Normal(μ, σ) for (μ, σ) in zip(μ_s, σ_s)]
+            n += 1
+        end
+    end
+end
+
+
+function create_vm_meas_set!(data::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
+
+
+    for (k, conv) in data["convdc"]
+        if conv["type_ac"] == 2
+            n=length(data["meas"])+1
+            data["meas"][string(n)] = Dict{String,Any}()
+            m = data["meas"][string(n)]
+            m["crit"]   = "rwls"
+            bus_ac=conv["busac_i"]
+            m["cmp_id"] =  bus_ac
+            m["cmp"]    = :bus
+            m["var"]    = :vm
+            μ_s = data["bus"][string(bus_ac)]["vm"]
+            σ_s = Float64[]
+            for μ in μ_s
+                σ = prec * μ / 3
+                if σ < prec_virtual
+                    σ = prec_virtual
+                end
+                push!(σ_s, σ)
+            end
+            m["dst"]    = [_ACDCSE._DST.Normal(μ, σ) for (μ, σ) in zip(μ_s, σ_s)]
+            n += 1
+        end
     end
 end
