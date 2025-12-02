@@ -41,15 +41,20 @@ nlp_optimizer_fore = _PMMCDC.optimizer_with_attributes(
 
 
 
-
-function include_set_point_meas!(data;prec::Float64 = 0.05, prec_virtual =1e-5)
-    create_vm_meas_set!(data; prec=prec, prec_virtual=prec_virtual)
+function include_se_estimates_meas!(data::Dict{String,Any}, res_t::Dict{String,Any} ; prec_meas::Float64=0.05, prec_virtual::Float64=1e-5)
+    data["meas"] = Dict{String,Any}() 
+    create_vm!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_va!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_vmf!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_vaf!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_vac!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_vmc!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
+    create_vmdc!(data, res_t; prec=prec_meas, prec_virtual=prec_virtual)
 end
 
-function include_forecast_measv2!(data::Dict{String,Any},res_t::Dict{String,Any},load_and_gen_data_fore_t;prec_fore::Float64=0.05, prec_virtual::Float64=1e-5)
-    
-    data["meas"] = Dict{String,Any}() 
 
+function include_forecast_meas!(data::Dict{String,Any},res_t::Dict{String,Any},load_and_gen_data_fore_t;prec_fore::Float64=0.05, prec_virtual::Float64=1e-5)
+    
     for row in eachrow(load_and_gen_data_fore_t)
         if row[:type] == 0
             n = length(data["meas"]) + 1
@@ -127,7 +132,7 @@ function include_forecast_measv2!(data::Dict{String,Any},res_t::Dict{String,Any}
 end
 
 
-function generate_data_forecastsv2!(time_steps, data_forecast_mean, data_forecast_P10, data_forecast_P90,
+function generate_data_forecasts!(time_steps, data_forecast_mean, data_forecast_P10, data_forecast_P90,
                                   se_res, load_and_gen_data_fore_mean, load_and_gen_data_fore_P10, load_and_gen_data_fore_P90;
                                   prec_fore::Float64=0.01, prec_meas::Float64=0.05)
 
@@ -136,23 +141,16 @@ function generate_data_forecastsv2!(time_steps, data_forecast_mean, data_forecas
         (t-1) % 4 == 0 ? t_se = t : nothing
 
         load_and_gen_data_fore_mean_t = load_and_gen_data_fore_mean[load_and_gen_data_fore_mean[!,:t].==t, :]
-        
-        
-        include_forecast_measv2!(data_forecast_mean[t], se_res[t], load_and_gen_data_fore_mean_t; prec_fore=prec_fore, prec_virtual=1e-5)
-        include_set_point_meas!(data_forecast_mean[t]; prec=prec_meas, prec_virtual=1e-5)
-        # include_set_point_meas!(data_forecast_mean[t]; prec=prec_meas, prec_virtual=1e-5)
-        
+        include_se_estimates_meas!(data_forecast_mean[t], se_res[t_se]; prec_meas=prec_meas, prec_virtual=1e-5)
+        include_forecast_meas!(data_forecast_mean[t], se_res[t_se], load_and_gen_data_fore_mean_t; prec_fore=prec_fore, prec_virtual=1e-5)
+
         load_and_gen_data_fore_P10_t = load_and_gen_data_fore_P10[load_and_gen_data_fore_P10[!,:t].==t, :]
-        # include_se_estimates_meas!(data_forecast_P10[t], se_res[t_se]; prec_meas=prec_meas, prec_virtual=1e-5)
-        include_forecast_measv2!(data_forecast_P10[t], se_res[t], load_and_gen_data_fore_P10_t; prec_fore=prec_fore, prec_virtual=1e-5)
-        include_set_point_meas!(data_forecast_P10[t]; prec=prec_meas, prec_virtual=1e-5)
-        # include_set_point_meas!(data_forecast_P10[t]; prec=prec_meas, prec_virtual=1e-5)
+        include_se_estimates_meas!(data_forecast_P10[t], se_res[t_se]; prec_meas=prec_meas, prec_virtual=1e-5)
+        include_forecast_meas!(data_forecast_P10[t], se_res[t_se], load_and_gen_data_fore_P10_t; prec_fore=prec_fore, prec_virtual=1e-5)
 
         load_and_gen_data_fore_P90_t = load_and_gen_data_fore_P90[load_and_gen_data_fore_P90[!,:t].==t, :]
-        # include_se_estimates_meas!(data_forecast_P90[t], se_res[t_se]; prec_meas=prec_meas, prec_virtual=1e-5)
-        include_forecast_measv2!(data_forecast_P90[t], se_res[t], load_and_gen_data_fore_P90_t; prec_fore=prec_fore, prec_virtual=1e-5)
-        include_set_point_meas!(data_forecast_P90[t]; prec=prec_meas, prec_virtual=1e-5)
-        # include_set_point_meas!(data_forecast_P90[t]; prec=prec_meas, prec_virtual=1e-5)
+        include_se_estimates_meas!(data_forecast_P90[t], se_res[t_se]; prec_meas=prec_meas, prec_virtual=1e-5)
+        include_forecast_meas!(data_forecast_P90[t], se_res[t_se], load_and_gen_data_fore_P90_t; prec_fore=prec_fore, prec_virtual=1e-5)
     end
 
 end
@@ -164,20 +162,16 @@ data_se= _ACDCSE.quickget_cigre_B4()
 
 reference=[1,2,3,4]
 
-load_and_gen_data = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/CIGRE_B4_measured.csv"),DataFrame; stringtype=String);
-load_and_gen_data_fore_mean = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/CIGRE_B4_forecasted.csv"),DataFrame; stringtype=String);
-load_and_gen_data_fore_P10 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/CIGRE_B4_forecasted_P10.csv"),DataFrame; stringtype=String);
-load_and_gen_data_fore_P90 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/CIGRE_B4_forecasted_P90.csv"),DataFrame; stringtype=String);
-
+load_and_gen_data = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/short_time/CIGRE_B4_measured.csv"),DataFrame; stringtype=String);
+load_and_gen_data_fore_mean = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/short_time/CIGRE_B4_forecasted.csv"),DataFrame; stringtype=String);
+load_and_gen_data_fore_P10 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/short_time/CIGRE_B4_forecasted_P10.csv"),DataFrame; stringtype=String);
+load_and_gen_data_fore_P90 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/short_time/CIGRE_B4_forecasted_P90.csv"),DataFrame; stringtype=String);
 
 time_steps=sort(unique(load_and_gen_data[!,:t]))
 
 buses=sort(unique(load_and_gen_data[!,:bus]))
 load_data=load_and_gen_data[load_and_gen_data[!,:type].==0,:]
 gen_data=load_and_gen_data[load_and_gen_data[!,:type].==1,:]
-
-
-
 
 data_pfs=Vector{Dict{String,Any}}(undef,length(time_steps))
 data_ses=Vector{Dict{String,Any}}(undef,length(time_steps))
@@ -197,11 +191,12 @@ end
 results_fp=Vector{Any}(undef,length(time_steps))
 solution_status_fp=Vector{String}(undef,length(time_steps))
 for t in time_steps
-    results_fp[t], σ_dict, data_ses[t] = generate_data_basic_acdcse(data_pfs[t], data_ses[t], nlp_optimizer_pf,"no_branch",reference, sample_error = false);
+    results_fp[t], σ_dict, data_ses[t] = generate_data_basic_acdcse(data_pfs[t], data_ses[t], nlp_optimizer_pf,"no_branch",reference, sample_error = true);
     solution_status_fp[t] = string(results_fp[t]["termination_status"])
 end
 
-#%%
+
+
 
 se_res=Vector{Any}(undef,length(time_steps))
 solution_status_se=Vector{String}(undef,length(time_steps))
@@ -220,9 +215,9 @@ for t in time_steps
     data_forecast_P90[t]=deepcopy(data_ses[t])
 end
 
-generate_data_forecastsv2!(time_steps, data_forecast_mean, data_forecast_P10, data_forecast_P90,
+generate_data_forecasts!(time_steps, data_forecast_mean, data_forecast_P10, data_forecast_P90,
                               se_res, load_and_gen_data_fore_mean, load_and_gen_data_fore_P10, load_and_gen_data_fore_P90;
-                              prec_fore=0.01, prec_meas=0.01)
+                              prec_fore=0.01, prec_meas=0.05)
 
 
 res_fore_mean=Vector{Any}(undef,length(time_steps))
@@ -249,14 +244,14 @@ for t in time_steps
     solution_fore_P10[t] = string(res_fore_P10[t]["termination_status"])
     solution_fore_P90[t] = string(res_fore_P90[t]["termination_status"])
 end 
-#%%
+
 v_real=[]
 v_P10=[]
 v_P90=[]
 v_mean=[]
 cmp_id=3
-var="i_from"
-cmp="branchdc"
+var="vm"
+cmp="busdc"
 for t in time_steps
     
     maean=res_fore_mean[t]["solution"][cmp][string(cmp_id)][var][1]
@@ -274,10 +269,11 @@ plt.plot!(time_steps, v_mean, label="mean", lw=2, marker=:diamond)
 plt.plot!(time_steps, v_P10, label="min", lw=1, ls=:dash, marker=:utriangle)
 plt.plot!(time_steps, v_P90, label="max", lw=1, ls=:dash, marker=:dtriangle)
 plt.xticks!(time_steps)
-plt.xlabel!("Hours")
+plt.xlabel!("Time step")
 plt.ylabel!("$var ($cmp $cmp_id)")
 plt.title!("Forecast vs Real $var ($cmp $cmp_id)")
 
-plt.savefig("v_forecast_vs_real.png")
+plt.savefig("v_forecast_vs_real_v2.png")
 
 #%%
+

@@ -87,6 +87,7 @@ function build_acdcse(pm::_PM.AbstractPowerModel)
     
     # state estimation variables 
     variable_load(pm)
+    
     variable_measurement(pm)
     variable_residual(pm,bounded=true)
 

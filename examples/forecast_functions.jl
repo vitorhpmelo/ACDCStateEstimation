@@ -276,3 +276,33 @@ function create_vm_meas_set!(data::Dict{String,Any}; prec::Float64=0.05, prec_vi
         end
     end
 end
+
+
+
+function create_vmdc_meas_set!(data::Dict{String,Any}; prec::Float64=0.05, prec_virtual::Float64=1e-5)
+
+
+    for (k, conv) in data["convdc"]
+        if conv["type_dc"] == 2
+            n=length(data["meas"])+1
+            data["meas"][string(n)] = Dict{String,Any}()
+            m = data["meas"][string(n)]
+            m["crit"]   = "rwls"
+            bus_dc=conv["busdc_i"]
+            m["cmp_id"] =  bus_dc
+            m["cmp"]    = :busdc
+            m["var"]    = :vdcm
+            μ_s = data["busdc"][string(bus_dc)]["Vdc"]
+            σ_s = Float64[]
+            for μ in μ_s
+                σ = prec * μ / 3
+                if σ < prec_virtual
+                    σ = prec_virtual
+                end
+                push!(σ_s, σ)
+            end
+            m["dst"]    = [_ACDCSE._DST.Normal(μ, σ) for (μ, σ) in zip(μ_s, σ_s)]
+            n += 1
+        end
+    end
+end
