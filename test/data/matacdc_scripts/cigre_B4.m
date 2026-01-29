@@ -14,7 +14,7 @@ mpc.baseMVA = 100.0;
 %	bus_i	type		Pd		Qd		  Gs	 Bs	   area		Vm	   Va		   baseKV	zone	  Vmax			 Vmin
 mpc.bus = [
     1   3   12	1	0   0   1       1.06	0	400     1       1.1     0.9;
-    2   3   12	1	0   0   1       1.06   	0	400     1       1.1     0.9;
+    2   2   12	1	0   0   1       1.06   	0	400     1       1.1     0.9;   % Changed to type 2 (PV bus)
     3   3   0	0	0   0   1       1.06   	0	220     1       1.1     0.9;
     4   3   0	0	0   0   1       1.06   	0	220     1       1.1     0.9;
 ];
@@ -23,7 +23,7 @@ mpc.bus = [
 %	bus	   Pg	  Qg		Qmax		 Qmin	  Vg	   mBase	status		Pmax	  Pmin	 Pc1	 Pc2   Qc1min	Qc1max    Qc2min	Qc2max	ramp_agc	    ramp_10	      ramp_30	  ramp_q	   apf         alpha
 mpc.gen = [
     1	0       0	500      -500    1.06	100       1       2000     0 0 0 0 0 0 0 0 0 0 0 0;
-    2	0      0	300      -300    1.06	100       1       2000     0 0 0 0 0 0 0 0 0 0 0 0;
+    2	10      0	300      -300    1.06	100       1       2000     0 0 0 0 0 0 0 0 0 0 0 0;
     3   15      0	300      -300    1.06	100       1       2000     0 0 0 0 0 0 0 0 0 0 0 0;
     4   15      0	300      -300    1.06	100       1       2000     0 0 0 0 0 0 0 0 0 0 0 0;
 ];

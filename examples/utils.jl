@@ -1,6 +1,5 @@
 
 
-
 function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer; sample_error::Bool = true)
     
     result = _PMMCDC.solve_mcdcopf(data_pf, _PM.ACPPowerModel, nlp_optimizer)
@@ -53,7 +52,7 @@ function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer; sample_erro
                                 # "pd", "qg", "qd","cr_fr","cr_to","ci_fr","ci_to"])#, "p_dc_to", "p_dc_fr"])
     _ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = sample_error, measurements = ["vm", "va", "p_to", "q_to","p_fr","q_fr", "vdcm", "pg", 
                                 "pd", "qg", "qd","mconv","pconv","qconv","vmconv","ppr_fr","qpr_fr","vmfilt","pgrid","qgrid","ptf_to","qtf_to","pdc","p_dc_fr","p_dc_to","i_dcgrid_to","i_dcgrid_fr","cr_to","cr_fr","ci_to","ci_fr","pdc"])#, "p_dc_to", "p_dc_fr"])
-# 
+ 
     _ACDCSE.prepare_data_for_se_default!(data_se, exceptions = [1]) #transforms all PV buses in PQ , and remove slack buses
 
     return result, σ_dict, data_se
@@ -107,7 +106,7 @@ function generate_data_basic_acdcse(data_pf, data_se, nlp_optimizer,reference::V
 
 
     _ACDCSE.powerflow2measurements!(data_se, result, σ_dict, sample_error = sample_error, measurements = measurements)#, "p_dc_to", "p_dc_fr"])
-# 
+
     _ACDCSE.prepare_data_for_se_default!(data_se, exceptions = reference) #transforms all PV buses in PQ , and remove slack buses
 
     return result, σ_dict, data_se

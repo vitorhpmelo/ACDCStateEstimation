@@ -190,13 +190,13 @@ function make_forecast_comparison_df(lst, time_steps, res_fore_mean, res_fore_P1
     return df_out
 end
 
-
-data_pf= _ACDCSE.quickget_cigre_B4() # Load the reference files se
+# Test case data in test/data/matacdc_scripts/cigre_B4.m
+data_pf= _ACDCSE.quickget_cigre_B4() # Load the reference files seda
 data_se= _ACDCSE.quickget_cigre_B4() # Load the reference files se
 
-reference=[1,2,3,4]
+reference=[1,2,3,4] #Each of the AC buses is a reference bus of their own AC area
 
-load_and_gen_data = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/day_ahead_3/CIGRE_B4_measured.csv"),DataFrame; stringtype=String); #load the measured data
+load_and_gen_data = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/day_ahead_3/CIGRE_B4_measured.csv"),DataFrame; stringtype=String); #load the measured data #Appended Gen data at bus 2 (Dummy data)
 load_and_gen_data_fore_mean = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/day_ahead_3/CIGRE_B4_forecasted.csv"),DataFrame; stringtype=String); #load the forecast data
 load_and_gen_data_fore_P10 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/day_ahead_3/CIGRE_B4_forecasted_P10.csv"),DataFrame; stringtype=String); #load the forecast data
 load_and_gen_data_fore_P90 = CSV.read(joinpath(_ACDCSE.ACDCSE_dir(),"test/data/load_and_gen/day_ahead_3/CIGRE_B4_forecasted_P90.csv"),DataFrame; stringtype=String); #load the forecast data
@@ -213,25 +213,34 @@ gen_data=load_and_gen_data[load_and_gen_data[!,:type].==1,:]
 data_pfs=Vector{Dict{String,Any}}(undef,length(time_steps))
 data_ses=Vector{Dict{String,Any}}(undef,length(time_steps))
 
+Gen2 = [data_pfs[t]["gen"]["2"]["pg"] for t in time_steps] # Data check
 
 modfify_loads_fp!(time_steps, load_data, data_pf, data_pfs, data_se, data_ses) # set for every time step the loads according to the load_data
 modify_gen_fp(time_steps, gen_data, data_pf, data_pfs, data_se, data_ses) # set for every time step the generators according to the gen_data (wind gen) info
 
+# Set one of the Gen as fixed and the other as slack
 
 #set constraints
 for data in data_pfs
     set_fixed_bus_voltages!(data) # set fixed voltages
     set_fixed_busdc_voltages!(data) # set fixed voltages
-    set_fixed_gen_pg_wind_conv!(data,[3,4]) # set fixed power 
+    set_fixed_gen_pg_wind_conv!(data,[2,3,4]) # set fixed power # Added bus 2 as fixed_gen
+    #Set_fixed_gen
 end
 
 
+# To determine the Gen 1 and 2 set points
 # run the power flow for every time step
 results_fp=Vector{Any}(undef,length(time_steps)) 
 solution_status_fp=Vector{String}(undef,length(time_steps))
 for t in time_steps
     results_fp[t], σ_dict, data_ses[t] = generate_data_basic_acdcse(data_pfs[t], data_ses[t], nlp_optimizer_pf,"no_branch",reference, sample_error = false);
     solution_status_fp[t] = string(results_fp[t]["termination_status"])
+end
+
+gen2 = Vector{Any}(undef,length(time_steps)) 
+for t in time_steps
+    gen2[t] = results_fp[t]["solution"]["gen"]["2"]["pg"]
 end
 
 #% run a se to estimate the gen 
